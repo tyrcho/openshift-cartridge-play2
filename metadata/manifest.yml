@@ -1,0 +1,45 @@
+Name: nodejs 0.10
+Cartridge-Short-Name: NODEJS
+Display-Name: NodeJS Cartridge
+Description: "A nodejs cartridge"
+Version: '0.10'
+License: "MIT"
+Vendor: joyent
+Cartridge-Version: 0.0.1
+Cartridge-Vendor: filirom1
+Categories:
+  - service
+  - web_framework
+Provides:
+  - nodejs
+Scaling:
+  Min: 1
+  Max: -1
+Cart-Data:
+  - Key: OPENSHIFT_NODEJS_LOG_DIR
+    Type: environment
+    Description: "Directory to store application log files."
+  - Key: OPENSHIFT_TMP_DIR
+    Type: environment
+    Description: "Directory to store application temporary files."
+  - Key: OPENSHIFT_REPO_DIR
+    Type: environment
+Group-Overrides:
+  - components:
+    - nodejs
+Subscribes:
+  set-db-connection-info:
+    Type: "ENV:NET_TCP:db:connection-info"
+    Required: false
+  set-nosql-db-connection-info:
+    Type: "ENV:NET_TCP:nosqldb:connection-info"
+    Required : false
+Endpoints:
+  - Private-IP-Name:   IP
+    Private-Port-Name: PORT
+    Private-Port:      8080
+    Public-Port-Name:  PROXY_PORT
+    Mappings:
+      - Frontend:      ""
+        Backend:       ""
+        Options:       { websocket: true }

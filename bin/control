@@ -1,0 +1,42 @@
+#!/bin/bash -e
+
+PATH=${OPENSHIFT_DATA_DIR}/node/bin/:/bin/:/usr/bin:$PATH
+
+source $OPENSHIFT_CARTRIDGE_SDK_BASH
+
+function start {
+    npm start
+}
+
+function stop {
+    killall node
+}
+
+function restart {
+    stop
+    start
+}
+
+function build {
+    npm install
+}
+
+function catchall {
+    echo "not yet implemented"
+}
+
+case "$1" in
+  start)       start ;;
+  stop)        stop ;;
+  restart)     restart ;;
+  status)      status ;;
+  reload)      catchall ;;
+  tidy)        catchall ;;
+  pre-build)   catchall ;;
+  build)       build ;;
+  deploy)      catchall ;;
+  post-deploy) catchall ;;
+  *)           exit 0
+esac
+
+exit 0
