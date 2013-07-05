@@ -20,6 +20,7 @@ function restart {
 
 function build {
     cd $OPENSHIFT_REPO_DIR
+    npm config set tmp $OPENSHIFT_TMP_DIR
     npm install
 }
 
