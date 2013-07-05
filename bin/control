@@ -6,7 +6,7 @@ source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
 function start {
     cd $OPENSHIFT_REPO_DIR
-    npm start
+    npm start -d
 }
 
 function stop {
