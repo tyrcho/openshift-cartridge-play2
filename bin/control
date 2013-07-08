@@ -2,8 +2,6 @@
 
 PATH=${OPENSHIFT_DATA_DIR}/node/bin/:/bin/:/usr/bin:$PATH
 
-source $OPENSHIFT_CARTRIDGE_SDK_BASH
-
 function start {
     cd $OPENSHIFT_REPO_DIR
     nohup npm start -d >> $OPENSHIFT_NODEJS_LOG_DIR/node.log 2>&1 &
