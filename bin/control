@@ -6,7 +6,7 @@ source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
 function start {
     cd $OPENSHIFT_REPO_DIR
-    npm start -d
+    nohup npm start -d >> $OPENSHIFT_NODEJS_LOG_DIR/node.log 2>&1 &
 }
 
 function stop {
@@ -24,6 +24,12 @@ function build {
     npm install
 }
 
+function tidy {
+    shopt -s dotglob
+    rm -rf $OPENSHIFT_NODEJS_LOG_DIR/*
+    rm -rf $OPENSHIFT_TMP_DIR/*
+}
+
 function catchall {
     echo "not yet implemented"
 }
@@ -34,7 +40,7 @@ case "$1" in
   restart)     restart ;;
   status)      status ;;
   reload)      catchall ;;
-  tidy)        catchall ;;
+  tidy)        tidy ;;
   pre-build)   catchall ;;
   build)       build ;;
   deploy)      catchall ;;
