@@ -17,8 +17,16 @@ function restart {
 }
 
 function build {
-    cd $OPENSHIFT_REPO_DIR
+    # Workaround for failure in npm install when a package in package.json
+    # points to a git commit.
+    # This issue occurs because we are running in the context of a
+    # git post receive-hook
+    unset GIT_DIR
+    unset GIT_WORK_TREE
+
     npm config set tmp $OPENSHIFT_TMP_DIR
+
+    cd $OPENSHIFT_REPO_DIR
     npm install
 }
 
