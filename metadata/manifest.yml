@@ -24,6 +24,12 @@ Cart-Data:
     Description: "Directory to store application temporary files."
   - Key: OPENSHIFT_REPO_DIR
     Type: environment
+  - Key: OPENSHIFT_NODEJS_PORT
+    Type: environment
+    Description: "Internal port to which the web-framework binds to."
+  - Key: OPENSHIFT_NODEJS_IP
+    Type: environment
+    Description: "Internal IP to which the web-framework binds to."
 Group-Overrides:
   - components:
     - nodejs
