@@ -49,4 +49,3 @@ Endpoints:
       - Frontend:      ""
         Backend:       ""
         Options:       { websocket: true }
-Source-Url: https://github.com/Filirom1/openshift-nodejs-simple/archive/master.zip
