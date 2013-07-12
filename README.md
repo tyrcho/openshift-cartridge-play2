@@ -1,4 +1,4 @@
-# OpenShift NodeJS Cartridge
+# OpenShift Dart Cartridge
 
 ## Use it
 
