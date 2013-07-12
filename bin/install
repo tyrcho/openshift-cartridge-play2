@@ -1,5 +1,5 @@
 #!/bin/bash
 
-touch "$OPENSHIFT_HOMEDIR"/.pub-cache
+mkdir "$OPENSHIFT_HOMEDIR"/.pub-cache
 chown $OPENSHIFT_GEAR_UUID.$OPENSHIFT_GEAR_UUID -R "$OPENSHIFT_HOMEDIR"/.pub-cache
 
