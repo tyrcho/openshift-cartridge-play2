@@ -4,7 +4,7 @@ PATH=${OPENSHIFT_DATA_DIR}/node/bin/:/bin/:/usr/bin:$PATH
 
 function start {
     cd $OPENSHIFT_REPO_DIR
-    nohup npm start -d >> $OPENSHIFT_NODEJS_LOG_DIR/node.log 2>&1 &
+    nohup npm start -d 2>&1 | tee -a $OPENSHIFT_NODEJS_LOG_DIR/nodejs.log &
 }
 
 function stop {
@@ -37,7 +37,7 @@ function tidy {
 }
 
 function catchall {
-    echo "not yet implemented"
+    echo ""
 }
 
 case "$1" in
