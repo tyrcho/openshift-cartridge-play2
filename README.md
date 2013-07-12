@@ -2,7 +2,7 @@
 
 ## Use it
 
-In OpenShift, choose a downloaded cartridge, with the following URL : http://cartreflect-claytondev.rhcloud.com/reflect?github=Filirom1/openshift-nodejs-simple
+In OpenShift, choose a downloaded cartridge, with the following URL : http://cartreflect-claytondev.rhcloud.com/reflect?github=Filirom1/openshift-cartridge-nodejs
 
 The create a nodejs project with a `package.json` at the root.
 In this file fills  `dependencies` and `scripts.start`.
