@@ -1,0 +1,4 @@
+name: my_app
+version: 1.2.3
+dependencies:
+  web_ui: any

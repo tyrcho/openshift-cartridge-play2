@@ -1,14 +1,14 @@
 #!/bin/bash -e
 
-PATH=${OPENSHIFT_DATA_DIR}/node/bin/:/bin/:/usr/bin:$PATH
+PATH=${OPENSHIFT_DATA_DIR}/dart-sdk/bin/:/bin/:/usr/bin:$PATH
 
 function start {
     cd $OPENSHIFT_REPO_DIR
-    nohup npm start -d 2>&1 | tee -a $OPENSHIFT_NODEJS_LOG_DIR/nodejs.log &
+    nohup dart server.dart 2>&1 | tee -a $OPENSHIFT_DART_LOG_DIR/dart.log &
 }
 
 function stop {
-    killall node || true
+    killall dart || true
 }
 
 function restart {
@@ -24,15 +24,13 @@ function build {
     unset GIT_DIR
     unset GIT_WORK_TREE
 
-    npm config set tmp $OPENSHIFT_TMP_DIR
-
     cd $OPENSHIFT_REPO_DIR
-    npm install
+    pub install
 }
 
 function tidy {
     shopt -s dotglob
-    rm -rf $OPENSHIFT_NODEJS_LOG_DIR/*
+    rm -rf $OPENSHIFT_DART_LOG_DIR/*
     rm -rf $OPENSHIFT_TMP_DIR/*
 }
 
