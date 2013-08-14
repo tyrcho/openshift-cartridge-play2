@@ -1,5 +1,5 @@
 #!/bin/bash
 
 cd ${OPENSHIFT_DATA_DIR}
-curl -s -o ${OPENSHIFT_DATA_DIR}/dartsdk-linux-64.tar.gz https://storage.googleapis.com/dart-editor-archive-integration/latest/dartsdk-linux-64.tar.gz
+curl -s -o ${OPENSHIFT_DATA_DIR}/dartsdk-linux-64.tar.gz https://storage.googleapis.com/dart-editor-archive-integration/23200/dartsdk-linux-64.tar.gz
 tar xzf dartsdk-linux-64.tar.gz
