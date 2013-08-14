@@ -10,4 +10,4 @@ The cartridge will launch `pub install` when you push, and `dart server.dart` to
 
 ## Dart version
 
-New version of dart doesn't work on CentOS 6.4, the used version is 2300: https://code.google.com/p/dart/issues/detail?id=11920
+New version of dart doesn't work on CentOS 6.4, the used version is 23200: https://code.google.com/p/dart/issues/detail?id=11920
