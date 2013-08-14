@@ -1,7 +1,5 @@
 #!/bin/bash -e
 
-PATH=${OPENSHIFT_DATA_DIR}/dart-sdk/bin/:/bin/:/usr/bin:$PATH
-
 function start {
     cd $OPENSHIFT_REPO_DIR
     nohup dart server.dart >> $OPENSHIFT_DART_LOG_DIR/dart.log 2>&1  &
