@@ -1,14 +1,17 @@
 Name: play2
 Cartridge-Short-Name: Play2
-Display-Name: Play2 Cartridge
-Description: "A play2 framework cartridge"
-Version: '0.1.0'
+Display-Name: Play 2.2.1
+Description: "The High Velocity Web Framework For Java and Scala"
+Version: '1.0.0'
 License: "MIT"
 Vendor: none
-Cartridge-Version: 0.0.1
+Cartridge-Version: '0.1.0'
 Cartridge-Vendor: tyrcho
+Source-Url: https://github.com/tyrcho/openshift-cartridge-play2.git
 Categories:
   - service
+  - play
+  - scala
   - web_framework
 Provides:
   - play2
