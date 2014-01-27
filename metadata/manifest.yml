@@ -1,5 +1,4 @@
 Name: play2
-Source-Url: git@github.com:tyrcho/openshift-cartridge-play2.git
 Cartridge-Short-Name: Play2
 Display-Name: Play2 Cartridge
 Description: "A play2 framework cartridge"
