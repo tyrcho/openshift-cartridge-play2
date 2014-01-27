@@ -2,11 +2,11 @@
 
 function start {
     cd $OPENSHIFT_REPO_DIR
-    nohup dart server.dart >> $OPENSHIFT_DART_LOG_DIR/dart.log 2>&1  &
+    ${OPENSHIFT_DATA_DIR}/play-2.2.1/play start > play.log &
 }
 
 function stop {
-    killall dart || true
+    killall java || true
 }
 
 function restart {
@@ -22,13 +22,12 @@ function build {
     unset GIT_DIR
     unset GIT_WORK_TREE
 
-    cd $OPENSHIFT_REPO_DIR
-    pub install
+    cd ${OPENSHIFT_REPO_DIR}
+    ${OPENSHIFT_DATA_DIR}/play-2.2.1/play clean compile stage
 }
 
 function tidy {
     shopt -s dotglob
-    rm -rf $OPENSHIFT_DART_LOG_DIR/*
     rm -rf $OPENSHIFT_TMP_DIR/*
 }
 
