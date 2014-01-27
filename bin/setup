@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd ${OPENSHIFT_DATA_DIR}
-curl -s -o ${OPENSHIFT_DATA_DIR}/play.zip http://downloads.typesafe.com/play/2.2.1/play.zip
+curl http://downloads.typesafe.com/play/2.2.1/play-2.2.1.zip > play.zip
 unzip play.zip
 rm play.zip
 
