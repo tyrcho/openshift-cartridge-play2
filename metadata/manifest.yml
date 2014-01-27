@@ -1,22 +1,22 @@
-Name: dart
-Cartridge-Short-Name: DART
-Display-Name: Dart Cartridge
-Description: "A dart cartridge"
-Version: '0.6.3'
+Name: play2
+Cartridge-Short-Name: Play2
+Display-Name: Play2 Cartridge
+Description: "A play2 framework cartridge"
+Version: '0.1.0'
 License: "MIT"
-Vendor: google
+Vendor: none
 Cartridge-Version: 0.0.1
-Cartridge-Vendor: filirom1
+Cartridge-Vendor: tyrcho
 Categories:
   - service
   - web_framework
 Provides:
-  - dart
+  - play2
 Scaling:
   Min: 1
   Max: -1
 Cart-Data:
-  - Key: OPENSHIFT_DART_LOG_DIR
+  - Key: OPENSHIFT_PLAY2_LOG_DIR
     Type: environment
     Description: "Directory to store application log files."
   - Key: OPENSHIFT_TMP_DIR
@@ -24,10 +24,10 @@ Cart-Data:
     Description: "Directory to store application temporary files."
   - Key: OPENSHIFT_REPO_DIR
     Type: environment
-  - Key: OPENSHIFT_DART_PORT
+  - Key: OPENSHIFT_PLAY2_PORT
     Type: environment
     Description: "Internal port to which the web-framework binds to."
-  - Key: OPENSHIFT_DART_IP
+  - Key: OPENSHIFT_PLAY2_IP
     Type: environment
     Description: "Internal IP to which the web-framework binds to."
   - Key: OPENSHIFT_APP_DNS
@@ -47,7 +47,7 @@ Cart-Data:
     Description: "Unique ID which identified the gear. This value changes between gears."
 Group-Overrides:
   - components:
-    - dart
+    - play2
     - web_proxy
 Publishes:
   get-doc-root:
