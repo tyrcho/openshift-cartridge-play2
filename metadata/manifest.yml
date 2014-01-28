@@ -7,7 +7,6 @@ License: "MIT"
 Vendor: none
 Cartridge-Version: '0.1.0'
 Cartridge-Vendor: tyrcho
-Source-Url: https://github.com/tyrcho/openshift-cartridge-play2.git
 Categories:
   - service
   - play
