@@ -2,7 +2,7 @@
 
 function start {
     cd $OPENSHIFT_REPO_DIR
-    ${OPENSHIFT_DATA_DIR}/play-2.2.1/play "start -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP}" > play.log &
+    play "start -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP}" > $OPENSHIFT_DART_LOG_DIR/play.log 2>&1 &
 }
 
 function stop {
@@ -23,7 +23,7 @@ function build {
     unset GIT_WORK_TREE
 
     cd ${OPENSHIFT_REPO_DIR}
-    ${OPENSHIFT_DATA_DIR}/play-2.2.1/play clean compile stage
+    play clean compile stage
 }
 
 function tidy {
