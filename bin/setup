@@ -1,8 +1,9 @@
 #!/bin/bash
 
+playV="2.2.2"
+
 cd ${OPENSHIFT_DATA_DIR}
-curl http://downloads.typesafe.com/play/2.2.1/play-2.2.1.zip > play.zip
+curl http://downloads.typesafe.com/play/${playV}/play-${playV}.zip > play.zip
 unzip play.zip
 rm play.zip
-ln -s ${OPENSHIFT_DATA_DIR}/play-2.2.1 ${OPENSHIFT_DATA_DIR}/play
-
+ln -s ${OPENSHIFT_DATA_DIR}/play-${playV} ${OPENSHIFT_DATA_DIR}/play
