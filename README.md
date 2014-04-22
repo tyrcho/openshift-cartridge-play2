@@ -6,7 +6,7 @@ Works with Play 2.2 : http://www.playframework.com/
 
 In OpenShift, choose a downloaded cartridge, with the following URL : http://cartreflect-claytondev.rhcloud.com/reflect?github=tyrcho/openshift-cartridge-play2
 
-*You need to restart the application before it is accessible otherwise you get an error 503 !*
+*You need to wait about 5 min after installing the cartridge so the application is built. Otherwise you get an error 503 !*
 
 ## Local start
 
