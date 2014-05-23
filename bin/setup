@@ -1,6 +1,6 @@
 #!/bin/bash
 
-playV="2.2.2"
+playV="2.2.3"
 
 cd ${OPENSHIFT_DATA_DIR}
 curl http://downloads.typesafe.com/play/${playV}/play-${playV}.zip > play.zip
