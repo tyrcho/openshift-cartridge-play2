@@ -2,7 +2,7 @@
 
 function start {
     cd $OPENSHIFT_REPO_DIR
-    nohup play "start -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -Dconfig.resource=openshift.conf -Xmx512M" > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
+    nohup play "start -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -Xmx512M" > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
 }
 
 function stop {
