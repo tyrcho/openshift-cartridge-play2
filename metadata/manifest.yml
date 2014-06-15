@@ -1,12 +1,12 @@
 Name: play2
 Cartridge-Short-Name: Play2
-Display-Name: Play 2.2.3
+Display-Name: Play 2.3.0
 Description: "The High Velocity Web Framework For Java and Scala"
 Version: '1.0.0'
 License: "MIT"
 Vendor: none
 Cartridge-Version: '0.1.0'
-Cartridge-Vendor: tyrcho
+Cartridge-Vendor: Dhanunjaya Naidu Yandrapu
 Categories:
   - service
   - play
