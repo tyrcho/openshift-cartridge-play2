@@ -2,10 +2,4 @@ name := "template"
 
 version := "1.0-SNAPSHOT"
 
-libraryDependencies ++= Seq(
-  jdbc,
-  anorm,
-  cache
-)
-
-play.Project.playScalaSettings
+lazy val root = (project in file(".")).enablePlugins(PlayScala)
