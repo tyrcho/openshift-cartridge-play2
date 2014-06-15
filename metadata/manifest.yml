@@ -6,7 +6,7 @@ Version: '1.0.0'
 License: "MIT"
 Vendor: none
 Cartridge-Version: '0.1.0'
-Cartridge-Vendor: Dhanunjaya Naidu Yandrapu
+Cartridge-Vendor: tyrcho
 Categories:
   - service
   - play
