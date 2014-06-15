@@ -1,4 +1,4 @@
-name := "template"
+name := "play"
 
 version := "1.0-SNAPSHOT"
 
