@@ -1,9 +1,9 @@
 #!/bin/bash
 
-playV="2.2.3"
+activatorV="1.2.2"
 
 cd ${OPENSHIFT_DATA_DIR}
-curl http://downloads.typesafe.com/play/${playV}/play-${playV}.zip > play.zip
-unzip play.zip
-rm play.zip
-ln -s ${OPENSHIFT_DATA_DIR}/play-${playV} ${OPENSHIFT_DATA_DIR}/play
+curl http://downloads.typesafe.com/typesafe-activator/${activatorV}/typesafe-activator-${activatorV}.zip > activator.zip
+unzip activator.zip
+rm activator.zip
+ln -s ${OPENSHIFT_DATA_DIR}/activator-${activatorV} ${OPENSHIFT_DATA_DIR}/activator
