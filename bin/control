@@ -2,7 +2,7 @@
 
 function start {
     cd $OPENSHIFT_REPO_DIR
-    rm RUNNING_PID
+    rm -f RUNNING_PID
     nohup play "start -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf" -Xmx512M > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
 }
 
