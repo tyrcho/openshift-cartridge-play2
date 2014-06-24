@@ -2,8 +2,8 @@
 
 function start {
     cd $OPENSHIFT_REPO_DIR
-    rm -f RUNNING_PID
-    nohup play "start -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf" -Xmx512M > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
+    rm -f target/universal/stage/RUNNING_PID
+    nohup target/universal/stage/bin/play -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -mem 512 > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
 }
 
 function stop {
@@ -24,7 +24,7 @@ function build {
     unset GIT_WORK_TREE
 
     cd ${OPENSHIFT_REPO_DIR}
-    play clean compile stage
+    activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 512
 }
 
 function tidy {
