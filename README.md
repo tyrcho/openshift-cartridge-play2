@@ -14,7 +14,7 @@ In OpenShift, choose a downloaded cartridge, with the following URL : http://car
 
 ### command line (rhc)
 
-rhc app create  myappForPlay  http://cartreflect-claytondev.rhcloud.com/reflect?github=tyrcho/openshift-cartridge-play2
+```rhc app create  myappForPlay  http://cartreflect-claytondev.rhcloud.com/reflect?github=tyrcho/openshift-cartridge-play2```
 
 
 ## Local start
