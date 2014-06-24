@@ -1,3 +1,5 @@
+![logo](http://www.playframework.com/assets/images/logos/normal-mini.png)
+
 # OpenShift Play Framework Cartridge
 
 Works with Play 2.3 and Activator : http://www.playframework.com/
@@ -22,4 +24,4 @@ You might need to increase the timeout to let it the time to download the activa
 
 You need to have installed [Play](http://www.playframework.com/) on your development workstation.
 
-Simply launch *activator run* from your invite, and browse to http://localhost:9000/ to see the welcome page.
+Simply launch ```activator run``` from your invite, and browse to http://localhost:9000/ to see the welcome page.
