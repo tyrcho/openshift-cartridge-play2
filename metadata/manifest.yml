@@ -5,15 +5,17 @@ Description: "The High Velocity Web Framework For Java and Scala"
 Version: '1.0.0'
 License: "MIT"
 Vendor: none
-Cartridge-Version: '0.1.0'
-Cartridge-Vendor: tyrcho
+Cartridge-Version: '0.2.3'
+Cartridge-Vendor: github
 Categories:
   - service
   - play
   - scala
   - web_framework
+  - activator
 Provides:
   - play2
+  - activator
 Scaling:
   Min: 1
   Max: -1
@@ -50,6 +52,7 @@ Cart-Data:
 Group-Overrides:
   - components:
     - play2
+    - activator
     - web_proxy
 Publishes:
   get-doc-root:
