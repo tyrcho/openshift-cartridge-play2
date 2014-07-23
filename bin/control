@@ -26,7 +26,7 @@ function build {
     unset GIT_WORK_TREE
 
     cd ${OPENSHIFT_REPO_DIR}
-    ${OPENSHIFT_DATA_DIR}/activator/activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 512
+    activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 512
 }
 
 function tidy {
