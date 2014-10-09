@@ -1,6 +1,6 @@
 #!/bin/bash
 
-activatorV="1.2.8"
+activatorV="1.2.10"
 
 cd ${OPENSHIFT_DATA_DIR}
 curl http://downloads.typesafe.com/typesafe-activator/${activatorV}/typesafe-activator-${activatorV}.zip > activator.zip
