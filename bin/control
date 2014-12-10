@@ -2,13 +2,22 @@
 
 set APP_NAME=demo
 
-function start {
-    cd $OPENSHIFT_REPO_DIR
-    # build on first time
-    [ -d target ] || build
-    rm -f target/universal/stage/RUNNING_PID
-    nohup target/universal/stage/bin/$APP_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -mem 512 > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
-}
+function start {                                                                                                                                         
+    cd $OPENSHIFT_REPO_DIR                                                                                                                               
+    # build on first time                                                                                                                                
+    [ -d target ] || buildAndRun &                                                                                                                       
+    [ -d target ] && run                                                                                                                                 
+}                                                                                                                                                        
+                                                                                                                                                         
+function buildAndRun {                                                                                                                                   
+        build                                                                                                                                            
+        run                                                                                                                                              
+}                                                                                                                                                        
+                                                                                                                                                         
+function run {                                                                                                                                           
+    rm -f target/universal/stage/RUNNING_PID                                                                                                             
+    nohup target/universal/stage/bin/play -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -mem 512 > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
+}                                                                                                                                                        
 
 function stop {
     killall java || true
