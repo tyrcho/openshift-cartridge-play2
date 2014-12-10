@@ -1,11 +1,11 @@
 Name: play2
 Cartridge-Short-Name: Play2
-Display-Name: Play Framework 2.3.6
+Display-Name: Play Framework 2.3.7
 Description: "The High Velocity Web Framework For Java and Scala"
-Version: '2.3.6'
+Version: '2.3.7'
 License: "MIT"
 Vendor: none
-Cartridge-Version: '2.3.6'
+Cartridge-Version: '2.3.7'
 Cartridge-Vendor: github
 Categories:
   - service
