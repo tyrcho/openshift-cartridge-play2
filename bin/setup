@@ -21,6 +21,8 @@ ln -s ${PROFILE_FILE} ~/.profile
 BASHRC_FILE=${OPENSHIFT_DATA_DIR}/.bashrc
 echo "# Warning: Be careful with modifications to this file,"         > ${BASHRC_FILE}
 echo "#          Your changes may cause your application to fail.\n" >> ${BASHRC_FILE}
+echo "# FORCE load profile"                                          >> ${BASHRC_FILE}
+echo ". ~/.profile"                                                  >> ${BASHRC_FILE}
 chmod 755 ${BASHRC_FILE}
 ln -s ${BASHRC_FILE} ~/.bashrc
 

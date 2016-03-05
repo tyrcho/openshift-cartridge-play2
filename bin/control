@@ -1,21 +1,39 @@
 #!/bin/bash
 
-. ~/.profile
+PLAY2_PID_FILE=${OPENSHIFT_HOMEDIR}/app-root/runtime/play2.pid
+CARTRIDGE_TYPE="play2"
 
 function start {
+  # Check for running app
+  if isrunning; then
+      echo "Application is already running"
+  else
     cd $OPENSHIFT_REPO_DIR
     # build on first time
     [ -d target ] || build
     rm -f target/universal/stage/RUNNING_PID
     BIN_NAME=$(ls target/universal/stage/bin/ | head -n 1)
     nohup target/universal/stage/bin/$BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -mem 512 > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
+    PROCESS_ID=$!
+    echo "$PROCESS_ID" > ${PLAY2_PID_FILE}
 }
 
 function stop {
-    killall java || true
+  echo "Stopping $CARTRIDGE_TYPE cart"
+
+  if isrunning; then
+    if [ -f "$PLAY2_PID_FILE" ]; then
+      PLAY2_PID=$(cat $PLAY2_PID_FILE);
+      echo "Sending SIGTERM to $CARTRIDGE_TYPE:$PLAY2_PID ..." 1>&2
+      killtree $PLAY2_PID
+    else
+      echo "Failed to locate $CARTRIDGE_TYPE PID File" 1>&2
+    fi
+  fi
 }
 
 function restart {
+    echo "Restarting $CARTRIDGE_TYPE cart"
     stop
     start
 }
@@ -28,7 +46,7 @@ function build {
     unset GIT_DIR
     unset GIT_WORK_TREE
 
-    cd ${OPENSHIFT_REPO_DIR}/play-scala
+    cd ${PLAY_APPLICATION_PATH}
     echo "JAVA_HOME[${JAVA_HOME}]"
     echo "PATH[${PATH}]"
     echo "PLAY_APPLICATION_PATH[${PLAY_APPLICATION_PATH}]"
@@ -40,9 +58,34 @@ function tidy {
     rm -rf $OPENSHIFT_TMP_DIR/*
 }
 
-function catchall {
-    echo ""
+# Check if the play2 process is running
+function isrunning() {
+
+    # Check for running app
+    if [ -f "$PLAY2_PID_FILE" ]; then
+      PLAY2_PID=$(cat $PLAY2_PID_FILE);
+      if /bin/ps --pid $PLAY2_PID 1>&2 >/dev/null;
+      then
+        return 0
+      fi
+    fi
+
+    return 1
 }
+
+function status() {
+   if isrunning
+   then
+      client_result "Application is running"
+   else
+      client_result "Application is either stopped or inaccessible"
+   fi
+}
+
+function catchall {
+    echo "not yet implemented"
+}
+
 
 case "$1" in
   start)       start ;;
