@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
-~/.profile
+. ~/.profile
 
 PLAY2_PID_FILE=${OPENSHIFT_HOMEDIR}/app-root/runtime/play2.pid
 CARTRIDGE_TYPE="play2"
@@ -16,7 +16,8 @@ function start {
     [ -d target ] || build
     rm -f target/universal/stage/RUNNING_PID
     BIN_NAME=$(ls target/universal/stage/bin/ | head -n 1)
-    nohup target/universal/stage/bin/$BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -mem 512 > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
+    #nohup target/universal/stage/bin/$BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -mem 512 > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
+    echo "Inside start"
     PROCESS_ID=$!
     echo "$PROCESS_ID" > ${PLAY2_PID_FILE}
   fi
@@ -54,7 +55,7 @@ function build {
     echo "JAVA_HOME[${JAVA_HOME}]"
     echo "PATH[${PATH}]"
     echo "PLAY_APPLICATION_PATH[${PLAY_APPLICATION_PATH}]"
-    #activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 750
+    activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 750
 }
 
 function tidy {
