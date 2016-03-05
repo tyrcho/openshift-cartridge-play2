@@ -26,8 +26,11 @@ function build {
     unset GIT_DIR
     unset GIT_WORK_TREE
 
-    cd ${OPENSHIFT_REPO_DIR}
-    activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 512
+    cd ${OPENSHIFT_REPO_DIR}/play-scala
+    echo "JAVA_HOME[${JAVA_HOME}]"
+    echo "PATH[${PATH}]"
+    echo "PLAY_APPLICATION_PATH[${PLAY_APPLICATION_PATH}]"
+    #activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 750
 }
 
 function tidy {

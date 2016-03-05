@@ -6,6 +6,6 @@ locked_files:
 - metadata/*
 - env/
 - env/*
-- template/
+- play-scala/
 processed_templates:
 - '**/*.erb'
