@@ -13,8 +13,8 @@ PROFILE_FILE=${OPENSHIFT_DATA_DIR}/.profile
 echo "# Warning: Be careful with modifications to this file,"         > ${PROFILE_FILE}
 echo "#          Your changes may cause your application to fail.\n" >> ${PROFILE_FILE}
 echo "export JAVA_HOME=/etc/alternatives/java_sdk_1.8.0"             >> ${PROFILE_FILE}
-echo "export PATH=$JAVA_HOME/bin:$PATH"                              >> ${PROFILE_FILE}
-echo "export PLAY_APPLICATION_PATH=${OPENSHIFT_REPO_DIR}/play-scala" >> ${PROFILE_FILE}
+echo "export PATH=\$JAVA_HOME/bin:\$PATH"                             >> ${PROFILE_FILE}
+echo "export PLAY_APPLICATION_PATH=${OPENSHIFT_REPO_DIR}play-scala"  >> ${PROFILE_FILE}
 chmod 755 ${PROFILE_FILE}
 ln -s ${PROFILE_FILE} ~/.profile
 

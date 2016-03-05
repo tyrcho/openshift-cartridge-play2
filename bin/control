@@ -1,4 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash
+
+. ~/.profile
 
 function start {
     cd $OPENSHIFT_REPO_DIR
