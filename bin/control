@@ -4,22 +4,48 @@ source $OPENSHIFT_CARTRIDGE_SDK_BASH
 . ~/.profile
 
 PLAY2_PID_FILE=${OPENSHIFT_HOMEDIR}/app-root/runtime/play2.pid
+PLAY2_NUM_START=${OPENSHIFT_HOMEDIR}/app-root/runtime/play2_num_start.status
 CARTRIDGE_TYPE="play2"
+
+function get_num_start {
+  if [ -f "$PLAY2_NUM_START" ]; then
+    return $(cat $PLAY2_NUM_START)
+  else
+    echo 0 > $PLAY2_NUM_START
+    return 0
+  fi
+}
+
+function inc_num_start {
+  if [ -f "$PLAY2_NUM_START" ]; then
+    NUM_START=$(cat $PLAY2_NUM_START)
+    NUM_START=$((NUM_START+1))
+    echo $NUM_START > $PLAY2_NUM_START
+  else
+    echo 0 > $PLAY2_NUM_START
+  fi
+}
 
 function start {
   # Check for running app
   if isrunning; then
       echo "Application is already running"
   else
-    cd $OPENSHIFT_REPO_DIR
-    # build on first time
-    [ -d target ] || build
-    rm -f target/universal/stage/RUNNING_PID
-    BIN_NAME=$(ls target/universal/stage/bin/ | head -n 1)
-    #nohup target/universal/stage/bin/$BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -mem 512 > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
-    echo "Inside start"
-    PROCESS_ID=$!
-    echo "$PROCESS_ID" > ${PLAY2_PID_FILE}
+    inc_num_start
+    get_num_start
+    NUM_START=$?
+    if [ $NUM_START -eq 1 ]; then
+      # build on first time
+      build
+      echo "Application first start, wait build process"
+    else
+      cd $PLAY_APPLICATION_PATH
+      rm -f target/universal/stage/RUNNING_PID
+      BIN_NAME=$(ls target/universal/stage/bin/ | head -n 1)
+      nohup target/universal/stage/bin/$BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -J-Xmx 512M -J-Xms 512M > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
+      PROCESS_ID=$!
+      echo "$PROCESS_ID" > ${PLAY2_PID_FILE}
+    fi
   fi
 }
 
@@ -55,7 +81,13 @@ function build {
     echo "JAVA_HOME[${JAVA_HOME}]"
     echo "PATH[${PATH}]"
     echo "PLAY_APPLICATION_PATH[${PLAY_APPLICATION_PATH}]"
-    nohup activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 512 &
+    get_num_start
+    NUM_START=$?
+    if [ $NUM_START -eq 0 -o $NUM_START -eq 1 ]; then
+      nohup activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 512 && start &
+    else
+      activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 512 &
+    fi
 }
 
 function tidy {
@@ -79,7 +111,9 @@ function isrunning() {
 }
 
 function status() {
-   if isrunning
+  if [ -f "$PLAY2_BUILD_STATUS" ]; then
+    client_result "Application is building, for 1st build please wait ~15 minutes"
+  elif isrunning
    then
       client_result "Application is running"
    else

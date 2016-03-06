@@ -11,16 +11,16 @@ ln -s ${OPENSHIFT_DATA_DIR}activator-${ACTIVATOR_VERSION}-minimal ${OPENSHIFT_DA
 ## Set-up environment variable
 PROFILE_FILE=${OPENSHIFT_DATA_DIR}/.profile
 echo "# Warning: Be careful with modifications to this file,"         > ${PROFILE_FILE}
-echo "#          Your changes may cause your application to fail.\n" >> ${PROFILE_FILE}
+echo "#          Your changes may cause your application to fail."   >> ${PROFILE_FILE}
 echo "export JAVA_HOME=/etc/alternatives/java_sdk_1.8.0"             >> ${PROFILE_FILE}
-echo "export PATH=\$JAVA_HOME/bin:\$PATH"                             >> ${PROFILE_FILE}
+echo "export PATH=\$JAVA_HOME/bin:\$PATH"                            >> ${PROFILE_FILE}
 echo "export PLAY_APPLICATION_PATH=${OPENSHIFT_REPO_DIR}play-scala"  >> ${PROFILE_FILE}
 chmod 755 ${PROFILE_FILE}
 ln -s ${PROFILE_FILE} ~/.profile
 
 BASHRC_FILE=${OPENSHIFT_DATA_DIR}/.bashrc
 echo "# Warning: Be careful with modifications to this file,"         > ${BASHRC_FILE}
-echo "#          Your changes may cause your application to fail.\n" >> ${BASHRC_FILE}
+echo "#          Your changes may cause your application to fail."   >> ${BASHRC_FILE}
 echo "# FORCE load profile"                                          >> ${BASHRC_FILE}
 echo ". ~/.profile"                                                  >> ${BASHRC_FILE}
 chmod 755 ${BASHRC_FILE}
@@ -28,7 +28,7 @@ ln -s ${BASHRC_FILE} ~/.bashrc
 
 BASH_PROFILE_FILE=${OPENSHIFT_DATA_DIR}/.bash_profile
 echo "# Warning: Be careful with modifications to this file,"         > ${BASH_PROFILE_FILE}
-echo "#          Your changes may cause your application to fail.\n" >> ${BASH_PROFILE_FILE}
+echo "#          Your changes may cause your application to fail."   >> ${BASH_PROFILE_FILE}
 echo "if [ -f ~/.bashrc ]; then . ~/.bashrc; fi"                     >> ${BASH_PROFILE_FILE}
 chmod 755 ${BASH_PROFILE_FILE}
 ln -s ${BASH_PROFILE_FILE} ~/.bash_profile
