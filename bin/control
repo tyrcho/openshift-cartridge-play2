@@ -55,7 +55,7 @@ function build {
     echo "JAVA_HOME[${JAVA_HOME}]"
     echo "PATH[${PATH}]"
     echo "PLAY_APPLICATION_PATH[${PLAY_APPLICATION_PATH}]"
-    activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 750
+    nohup activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 512 &
 }
 
 function tidy {
