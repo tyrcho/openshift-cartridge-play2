@@ -3,48 +3,52 @@
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 . ~/.profile
 
-PLAY2_PID_FILE=${OPENSHIFT_HOMEDIR}/app-root/runtime/play2.pid
-PLAY2_NUM_START=${OPENSHIFT_HOMEDIR}/app-root/runtime/play2_num_start.status
-CARTRIDGE_TYPE="play2"
+readonly J_XMX="512m"
+readonly J_XMS="512m"
+readonly PLAY2_RUNTIME=${OPENSHIFT_HOMEDIR}/app-root/runtime
+readonly PLAY2_PID_RUN=${PLAY2_RUNTIME}/play2.pid
+readonly PLAY2_PID_ACTIVATOR_BUILD=${PLAY2_RUNTIME}/play2_activator_build.pid
+readonly PLAY2_NUM_BUILD=${PLAY2_RUNTIME}/play2_num_build.counter
+readonly CARTRIDGE_TYPE="play2"
+readonly WAIT_MESSAGE="So... keep calm and wait... it could be taken ~15 minutes ... take a break: watch some videos, listen some music tracks, ..."
 
-function get_num_start {
-  if [ -f "$PLAY2_NUM_START" ]; then
-    return $(cat $PLAY2_NUM_START)
+function get_num_build {
+  if [ -f "$PLAY2_NUM_BUILD" ]; then
+    return $(cat $PLAY2_NUM_BUILD)
   else
-    echo 0 > $PLAY2_NUM_START
+    echo 0 > $PLAY2_NUM_BUILD
     return 0
   fi
 }
 
-function inc_num_start {
-  if [ -f "$PLAY2_NUM_START" ]; then
-    NUM_START=$(cat $PLAY2_NUM_START)
-    NUM_START=$((NUM_START+1))
-    echo $NUM_START > $PLAY2_NUM_START
+function inc_num_build {
+  if [ -f "$PLAY2_NUM_BUILD" ]; then
+    local NUM_BUILD=$(cat $PLAY2_NUM_BUILD)
+    NUM_BUILD=$((NUM_BUILD+1))
+    echo $NUM_BUILD > $PLAY2_NUM_BUILD
   else
-    echo 0 > $PLAY2_NUM_START
+    echo 0 > $PLAY2_NUM_BUILD
   fi
 }
 
 function start {
   # Check for running app
-  if isrunning; then
+  if isrunning $PLAY2_PID_RUN ; then
       echo "Application is already running"
+  elif isrunning $PLAY2_PID_ACTIVATOR_BUILD ; then
+      echo "Application is building"
   else
-    inc_num_start
-    get_num_start
-    NUM_START=$?
-    if [ $NUM_START -eq 1 ]; then
+    get_num_build
+    local NUM_BUILD=$?
+    if [ $NUM_BUILD -eq 1 ]; then
       # build on first time
       build
-      echo "Application first start, wait build process"
+      echo "Application first start, waiting build process"
     else
       cd $PLAY_APPLICATION_PATH
       rm -f target/universal/stage/RUNNING_PID
       BIN_NAME=$(ls target/universal/stage/bin/ | head -n 1)
-      nohup target/universal/stage/bin/$BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -J-Xmx 512M -J-Xms 512M > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
-      PROCESS_ID=$!
-      echo "$PROCESS_ID" > ${PLAY2_PID_FILE}
+      nohup target/universal/stage/bin/$BIN_NAME -Duser.home=${PLAY_APPLICATION_PATH} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -J-Xmx=$J_XMX -J-Xms=$J_XMS -Dpidfile.path=${PLAY2_PID_RUN} > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
     fi
   fi
 }
@@ -52,9 +56,9 @@ function start {
 function stop {
   echo "Stopping $CARTRIDGE_TYPE cart"
 
-  if isrunning; then
-    if [ -f "$PLAY2_PID_FILE" ]; then
-      PLAY2_PID=$(cat $PLAY2_PID_FILE);
+  if isrunning $PLAY2_PID_RUN ; then
+    if [ -f "$PLAY2_PID_RUN" ]; then
+      local PLAY2_PID=$(cat $PLAY2_PID_RUN);
       echo "Sending SIGTERM to $CARTRIDGE_TYPE:$PLAY2_PID ..." 1>&2
       killtree $PLAY2_PID
     else
@@ -81,12 +85,24 @@ function build {
     echo "JAVA_HOME[${JAVA_HOME}]"
     echo "PATH[${PATH}]"
     echo "PLAY_APPLICATION_PATH[${PLAY_APPLICATION_PATH}]"
-    get_num_start
-    NUM_START=$?
-    if [ $NUM_START -eq 0 -o $NUM_START -eq 1 ]; then
-      nohup activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 512 && start &
+    get_num_build
+    local NUM_BUILD=$?
+    if [ $NUM_BUILD -eq 0 ]; then
+      # First build
+      echo "First build, it takes a while."
+      echo "At the end of build it will run start process"
+      echo "$WAIT_MESSAGE"
+      nohup activator clean stage -Duser.home=${PLAY_APPLICATION_PATH} -J-Xmx=$J_XMX -J-Xms=$J_XMS && inc_num_build && rm $PLAY2_PID_ACTIVATOR_BUILD && start &
+      local BUILD_PID=$!
+      echo "$BUILD_PID" > $PLAY2_PID_ACTIVATOR_BUILD
+    elif isrunning $PLAY2_PID_RUN
+     then
+      echo "Another build is running, please wait previous build process"
     else
-      activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 512 &
+      # Clear PID process
+      rm $PLAY2_PID_ACTIVATOR_BUILD
+      activator clean stage -Duser.home=${PLAY_APPLICATION_PATH} -J-Xmx=$J_XMX -J-Xms=$J_XMS &
+      inc_num_build
     fi
 }
 
@@ -99,9 +115,9 @@ function tidy {
 function isrunning() {
 
     # Check for running app
-    if [ -f "$PLAY2_PID_FILE" ]; then
-      PLAY2_PID=$(cat $PLAY2_PID_FILE);
-      if /bin/ps --pid $PLAY2_PID 1>&2 >/dev/null;
+    if [ -f "$1" ]; then
+      local PID_TO_CHECK=$(cat $1);
+      if /bin/ps --pid $PID_TO_CHECK 1>&2 >/dev/null;
       then
         return 0
       fi
@@ -111,9 +127,17 @@ function isrunning() {
 }
 
 function status() {
-  if [ -f "$PLAY2_BUILD_STATUS" ]; then
-    client_result "Application is building, for 1st build please wait ~15 minutes"
-  elif isrunning
+  if srunning $PLAY2_PID_ACTIVATOR_BUILD
+   then
+     get_num_build
+     local NUM_BUILD=$?
+     if [ NUM_BUILD -eq 0 ]; then
+       client_result "Application is building. $WAIT_MESSAGE"
+     else
+       client_result "Application is building"
+    fi
+
+  elif isrunning $PLAY2_PID_RUN
    then
       client_result "Application is running"
    else
