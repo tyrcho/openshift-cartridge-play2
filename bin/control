@@ -5,12 +5,12 @@ source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
 readonly J_XMX="512m"
 readonly J_XMS="512m"
-readonly PLAY2_RUNTIME=${OPENSHIFT_HOMEDIR}/app-root/runtime
+readonly PLAY2_RUNTIME=${OPENSHIFT_TMP_DIR}
 readonly PLAY2_PID_RUN=${PLAY2_RUNTIME}/play2.pid
 readonly PLAY2_PID_ACTIVATOR_BUILD=${PLAY2_RUNTIME}/play2_activator_build.pid
 readonly PLAY2_NUM_BUILD=${PLAY2_RUNTIME}/play2_num_build.counter
 readonly CARTRIDGE_TYPE="play2"
-readonly WAIT_MESSAGE="So... keep calm and wait... it could be taken ~15 minutes ... take a break: watch some videos, listen some music tracks, ..."
+readonly WAIT_MESSAGE="So... keep calm and wait... it could be taken ~15 minutes for first build... take a break: watch some videos, listen some music tracks, ..."
 
 function get_num_build {
   if [ -f "$PLAY2_NUM_BUILD" ]; then
@@ -45,17 +45,15 @@ function start {
       build
       echo "Application first start, waiting build process"
     else
-      cd $PLAY_APPLICATION_PATH
+      cd $PLAY2_APPLICATION_PATH
       rm -f target/universal/stage/RUNNING_PID
       BIN_NAME=$(ls target/universal/stage/bin/ | head -n 1)
-      nohup target/universal/stage/bin/$BIN_NAME -Duser.home=${PLAY_APPLICATION_PATH} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -J-Xmx=$J_XMX -J-Xms=$J_XMS -Dpidfile.path=${PLAY2_PID_RUN} > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
+      nohup target/universal/stage/bin/$BIN_NAME -Duser.home=${PLAY2_APPLICATION_PATH} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -J-Xmx$J_XMX -J-Xms$J_XMS -Dpidfile.path=${PLAY2_PID_RUN} > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
     fi
   fi
 }
 
 function stop {
-  echo "Stopping $CARTRIDGE_TYPE cart"
-
   if isrunning $PLAY2_PID_RUN ; then
     if [ -f "$PLAY2_PID_RUN" ]; then
       local PLAY2_PID=$(cat $PLAY2_PID_RUN);
@@ -64,6 +62,8 @@ function stop {
     else
       echo "Failed to locate $CARTRIDGE_TYPE PID File" 1>&2
     fi
+  else
+    echo "$CARTRIDGE_TYPE cart is already stopped"
   fi
 }
 
@@ -81,10 +81,10 @@ function build {
     unset GIT_DIR
     unset GIT_WORK_TREE
 
-    cd ${PLAY_APPLICATION_PATH}
+    cd ${PLAY2_APPLICATION_PATH}
     echo "JAVA_HOME[${JAVA_HOME}]"
     echo "PATH[${PATH}]"
-    echo "PLAY_APPLICATION_PATH[${PLAY_APPLICATION_PATH}]"
+    echo "PLAY2_APPLICATION_PATH[${PLAY2_APPLICATION_PATH}]"
     get_num_build
     local NUM_BUILD=$?
     if [ $NUM_BUILD -eq 0 ]; then
@@ -92,16 +92,17 @@ function build {
       echo "First build, it takes a while."
       echo "At the end of build it will run start process"
       echo "$WAIT_MESSAGE"
-      nohup activator clean stage -Duser.home=${PLAY_APPLICATION_PATH} -J-Xmx=$J_XMX -J-Xms=$J_XMS && inc_num_build && rm $PLAY2_PID_ACTIVATOR_BUILD && start &
+      nohup activator clean stage -Duser.home=${PLAY2_APPLICATION_PATH} -J-Xmx$J_XMX -J-Xms$J_XMS && inc_num_build && rm $PLAY2_PID_ACTIVATOR_BUILD && start &
       local BUILD_PID=$!
       echo "$BUILD_PID" > $PLAY2_PID_ACTIVATOR_BUILD
     elif isrunning $PLAY2_PID_RUN
      then
       echo "Another build is running, please wait previous build process"
     else
+      echo "Play activator build process"
       # Clear PID process
       rm $PLAY2_PID_ACTIVATOR_BUILD
-      activator clean stage -Duser.home=${PLAY_APPLICATION_PATH} -J-Xmx=$J_XMX -J-Xms=$J_XMS &
+      activator clean stage -Duser.home=${PLAY2_APPLICATION_PATH} -J-Xmx$J_XMX -J-Xms$J_XMS
       inc_num_build
     fi
 }
@@ -113,10 +114,11 @@ function tidy {
 
 # Check if the play2 process is running
 function isrunning() {
-
+    echo "Inside isrunning 1[$1]"
     # Check for running app
     if [ -f "$1" ]; then
       local PID_TO_CHECK=$(cat $1);
+      echo "Inside isrunning PID_TO_CHECK[$PID_TO_CHECK]"
       if /bin/ps --pid $PID_TO_CHECK 1>&2 >/dev/null;
       then
         return 0
@@ -127,7 +129,7 @@ function isrunning() {
 }
 
 function status() {
-  if srunning $PLAY2_PID_ACTIVATOR_BUILD
+  if isrunning $PLAY2_PID_ACTIVATOR_BUILD
    then
      get_num_build
      local NUM_BUILD=$?

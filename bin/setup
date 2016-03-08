@@ -12,14 +12,7 @@ ln -s ${OPENSHIFT_DATA_DIR}activator-${ACTIVATOR_VERSION}-minimal ${OPENSHIFT_DA
 PROFILE_FILE=${OPENSHIFT_DATA_DIR}/.profile
 echo "# Warning: Be careful with modifications to this file,"            > ${PROFILE_FILE}
 echo "#          Your changes may cause your application to fail."      >> ${PROFILE_FILE}
-echo "if [[ \$PATH !=  *\"sdk_1.8\"* ]]; then"                          >> ${PROFILE_FILE}
-echo "  readonly JAVA_HOME=/etc/alternatives/java_sdk_1.8.0"            >> ${PROFILE_FILE}
-echo "  export JAVA_HOME"                                               >> ${PROFILE_FILE}
-echo "  readonly PATH=\$JAVA_HOME/bin:\$PATH"                           >> ${PROFILE_FILE}
-echo "  export PATH"                                                    >> ${PROFILE_FILE}
-echo "  readonly PLAY_APPLICATION_PATH=${OPENSHIFT_REPO_DIR}play-scala" >> ${PROFILE_FILE}
-echo "  export PLAY_APPLICATION_PATH"                                   >> ${PROFILE_FILE}
-echo "fi"                                                               >> ${PROFILE_FILE}
+echo "PLAY2_APPLICATION_PATH=${OPENSHIFT_REPO_DIR}play-scala"           >> ${PROFILE_FILE}
 chmod 755 ${PROFILE_FILE}
 ln -s ${PROFILE_FILE} ~/.profile
 
