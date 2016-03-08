@@ -133,7 +133,7 @@ function status() {
    then
      get_num_build
      local NUM_BUILD=$?
-     if [ NUM_BUILD -eq 0 ]; then
+     if [ $NUM_BUILD -eq 0 ]; then
        client_result "Application is building. $WAIT_MESSAGE"
      else
        client_result "Application is building"
