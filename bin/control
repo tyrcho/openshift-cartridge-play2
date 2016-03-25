@@ -3,12 +3,12 @@
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 . ~/.profile
 
-readonly J_XMX="512m"
-readonly J_XMS="512m"
-readonly PLAY2_RUNTIME=${OPENSHIFT_TMP_DIR}
+readonly JAVA_MEMORY="-Xms$JAVA_XMS -J-Xms$JAVA_XMS -Xmx$JAVA_XMX -J-Xmx$JAVA_XMX"
+readonly PLAY2_RUNTIME=${OPENSHIFT_DATA_DIR}
 readonly PLAY2_PID_RUN=${PLAY2_RUNTIME}/play2.pid
 readonly PLAY2_PID_ACTIVATOR_BUILD=${PLAY2_RUNTIME}/play2_activator_build.pid
 readonly PLAY2_NUM_BUILD=${PLAY2_RUNTIME}/play2_num_build.counter
+readonly PLAY2_DEPLOY_PATH=$OPENSHIFT_DATA_DIR/deploy
 readonly CARTRIDGE_TYPE="play2"
 readonly WAIT_MESSAGE="So... keep calm and wait... it could be taken ~15 minutes for first build... take a break: watch some videos, listen some music tracks, ..."
 
@@ -23,9 +23,9 @@ function get_num_build {
 
 function inc_num_build {
   if [ -f "$PLAY2_NUM_BUILD" ]; then
-    local NUM_BUILD=$(cat $PLAY2_NUM_BUILD)
-    NUM_BUILD=$((NUM_BUILD+1))
-    echo $NUM_BUILD > $PLAY2_NUM_BUILD
+    local INB_NUM_BUILD=$(cat $PLAY2_NUM_BUILD)
+    INB_NUM_BUILD=$((INB_NUM_BUILD+1))
+    echo $INB_NUM_BUILD > $PLAY2_NUM_BUILD
   else
     echo 0 > $PLAY2_NUM_BUILD
   fi
@@ -33,32 +33,62 @@ function inc_num_build {
 
 function start {
   # Check for running app
-  if isrunning $PLAY2_PID_RUN ; then
+  if is_running $PLAY2_PID_RUN ; then
       echo "Application is already running"
-  elif isrunning $PLAY2_PID_ACTIVATOR_BUILD ; then
+  elif is_running $PLAY2_PID_ACTIVATOR_BUILD ; then
       echo "Application is building"
-  else
+  elif [ -f "$PLAY2_APPLICATION_PATH" ]; then
+    S_BASENAME_FILE=$(basename "$PLAY2_APPLICATION_PATH")
+    S_EXTENSION="${S_BASENAME_FILE##*.}"
+    if [ $S_EXTENSION != "zip" ]; then
+      start_dist "$PLAY2_APPLICATION_PATH"
+    else
+      echo "Play2 application path is not a zip file, please check PLAY2_APPLICATION_PATH in ~/.profile file"
+      exit 2
+    fi
+  elif [ -d "$PLAY2_APPLICATION_PATH" ]; then
     get_num_build
-    local NUM_BUILD=$?
-    if [ $NUM_BUILD -eq 1 ]; then
+    local S_NUM_BUILD=$?
+    if [ $S_NUM_BUILD -eq 1 ]; then
       # build on first time
       build
       echo "Application first start, waiting build process"
     else
       cd $PLAY2_APPLICATION_PATH
-      rm -f target/universal/stage/RUNNING_PID
-      BIN_NAME=$(ls target/universal/stage/bin/ | head -n 1)
-      nohup target/universal/stage/bin/$BIN_NAME -Duser.home=${PLAY2_APPLICATION_PATH} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -J-Xmx$J_XMX -J-Xms$J_XMS -Dpidfile.path=${PLAY2_PID_RUN} > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
+      local S_DIST_FILE=$(find `pwd`/target/universal -name *.zip)
+      start_dist "$S_DIST_FILE"
     fi
   fi
 }
 
+function start_dist {
+  local D_DIST_FILE=$1
+  if [ -f "$D_DIST_FILE" ]; then
+    local D_BASENAME_FILE=$(basename "$D_DIST_FILE")
+    local D_DIST_UNZIPPED="$PLAY2_DEPLOY_PATH/${D_BASENAME_FILE%.*}"
+    rm -fR $D_UNZIP_PATH
+    unzip "$D_DIST_FILE" -d "$PLAY2_DEPLOY_PATH"
+    local D_BIN_NAME=$(find $D_DIST_UNZIPPED/bin -type f | grep -v '.bat' | head -n 1)
+    local D_PLAY_CRYPTO_SECRET=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9_?' | head -c30)
+    local D_APPLICATION_CONF=$(find $D_DIST_UNZIPPED -type f -name application.conf | head -n 1)
+    local D_RESOURCE_CONF=$(find $D_DIST_UNZIPPED -type f -name openshift.conf | head -n 1)
+    nohup $D_BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 \
+    -Dhttp.address=${OPENSHIFT_PLAY2_IP} -Dconfig.file=${D_APPLICATION_CONF} \
+    -Dconfig.resource=${D_RESOURCE_CONF} -Dplay.crypto.secret="$D_PLAY_CRYPTO_SECRET" \
+    $JAVA_MEMORY -Dpidfile.path=${PLAY2_PID_RUN} \
+    -DapplyEvolutions.default=true > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
+  else
+    echo "ERROR: Deploy - Dist file [$D_DIST_FILE] not found"
+  fi
+}
+
+
 function stop {
-  if isrunning $PLAY2_PID_RUN ; then
+  if is_running $PLAY2_PID_RUN ; then
     if [ -f "$PLAY2_PID_RUN" ]; then
-      local PLAY2_PID=$(cat $PLAY2_PID_RUN);
-      echo "Sending SIGTERM to $CARTRIDGE_TYPE:$PLAY2_PID ..." 1>&2
-      killtree $PLAY2_PID
+      local S_PLAY2_PID=$(cat $PLAY2_PID_RUN);
+      echo "Sending SIGTERM to $CARTRIDGE_TYPE:$S_PLAY2_PID ..." 1>&2
+      kill_tree $S_PLAY2_PID
     else
       echo "Failed to locate $CARTRIDGE_TYPE PID File" 1>&2
     fi
@@ -74,115 +104,108 @@ function restart {
 }
 
 function build {
-    # Workaround for failure in npm install when a package in package.json
-    # points to a git commit.
-    # This issue occurs because we are running in the context of a
-    # git post receive-hook
-    unset GIT_DIR
-    unset GIT_WORK_TREE
+  # Workaround for failure in npm install when a package in package.json
+  # points to a git commit.
+  # This issue occurs because we are running in the context of a
+  # git post receive-hook
+  unset GIT_DIR
+  unset GIT_WORK_TREE
 
-    cd ${PLAY2_APPLICATION_PATH}
-    echo "JAVA_HOME[${JAVA_HOME}]"
-    echo "PATH[${PATH}]"
-    echo "PLAY2_APPLICATION_PATH[${PLAY2_APPLICATION_PATH}]"
-    get_num_build
-    local NUM_BUILD=$?
-    if [ $NUM_BUILD -eq 0 ]; then
-      # First build
-      echo "First build, it takes a while."
-      echo "At the end of build it will run start process"
-      echo "$WAIT_MESSAGE"
-      nohup activator clean stage -Duser.home=${PLAY2_APPLICATION_PATH} -J-Xmx$J_XMX -J-Xms$J_XMS && inc_num_build && rm $PLAY2_PID_ACTIVATOR_BUILD && start &
-      local BUILD_PID=$!
-      echo "$BUILD_PID" > $PLAY2_PID_ACTIVATOR_BUILD
-    elif isrunning $PLAY2_PID_RUN
-     then
-      echo "Another build is running, please wait previous build process"
-    else
-      echo "Play activator build process"
-      # Clear PID process
-      rm $PLAY2_PID_ACTIVATOR_BUILD
-      activator clean stage -Duser.home=${PLAY2_APPLICATION_PATH} -J-Xmx$J_XMX -J-Xms$J_XMS
-      inc_num_build
-    fi
+  cd ${PLAY2_APPLICATION_PATH}
+  get_num_build
+  local B_NUM_BUILD=$?
+  if is_running $PLAY2_PID_ACTIVATOR_BUILD; then
+    echo "Another build process is running, please wait"
+   elif [ $B_NUM_BUILD -eq 0 ]; then
+    # First build
+    echo "First build takes a while."
+    echo "At the end of build it will run start process"
+    echo "$WAIT_MESSAGE"
+    nohup activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} \
+    $JAVA_MEMORY && inc_num_build && start &
+
+    local B_BUILD_PID=$!
+    echo "$B_BUILD_PID" > $PLAY2_PID_ACTIVATOR_BUILD
+  else
+    echo "Play activator build process"
+    # Clear PID process
+    activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} $JAVA_MEMORY &
+    local B_BUILD_PID=$!
+    echo "$B_BUILD_PID" > $PLAY2_PID_ACTIVATOR_BUILD
+    inc_num_build
+    wait
+  fi
 }
 
 function tidy {
-    shopt -s dotglob
-    rm -rf $OPENSHIFT_TMP_DIR/*
+  shopt -s dotglob
+  rm -rf $OPENSHIFT_TMP_DIR/*
 }
 
 # Check if the play2 process is running
-function isrunning() {
-    echo "Inside isrunning 1[$1]"
-    # Check for running app
-    if [ -f "$1" ]; then
-      local PID_TO_CHECK=$(cat $1);
-      echo "Inside isrunning PID_TO_CHECK[$PID_TO_CHECK]"
-      if /bin/ps --pid $PID_TO_CHECK 1>&2 >/dev/null;
-      then
-        return 0
-      fi
+function is_running() {
+  # Check for running app
+  if [ -f "$1" ]; then
+    local IR_PID_TO_CHECK=$(cat $1)
+    if /bin/ps --pid $IR_PID_TO_CHECK 1>&2 >/dev/null; then
+      return 0
     fi
-
-    return 1
+  fi
+  return 1
 }
 
 function status() {
-  if isrunning $PLAY2_PID_ACTIVATOR_BUILD
-   then
-     get_num_build
-     local NUM_BUILD=$?
-     if [ $NUM_BUILD -eq 0 ]; then
-       client_result "Application is building. $WAIT_MESSAGE"
-     else
-       client_result "Application is building"
+  if is_running $PLAY2_PID_ACTIVATOR_BUILD; then
+    get_num_build
+    local S_NUM_BUILD=$?
+    if [ $S_NUM_BUILD -eq 0 ]; then
+      client_result "Application is building. $WAIT_MESSAGE"
+    else
+      client_result "Application is building"
     fi
-
-  elif isrunning $PLAY2_PID_RUN
-   then
-      client_result "Application is running"
-   else
-      client_result "Application is either stopped or inaccessible"
-   fi
+  elif is_running $PLAY2_PID_RUN; then
+    client_result "Application is running"
+  else
+    client_result "Application is either stopped or inaccessible"
+  fi
 }
 
 
 # Kill the process given by $1 and its children
-killtree() {
-    local _pid=$1
-    for _child in $(ps -o pid --no-headers --ppid ${_pid}); do
-        killtree ${_child}
-    done
+kill_tree() {
+  local KT_PARENT_PID=$1
+  for KT_PID_CHILD in $(ps -o pid --no-headers --ppid ${KT_PARENT_PID});
+  do
+    kill_tree ${KT_PID_CHILD}
+  done
 
-    local should_be_gone_pid=$(ps -o pid -p ${_pid} --no-headers)
-    if [ -z "$should_be_gone_pid" ]; then
-        return
+  local KT_SHOULD_BE_GONE_ID=$(ps -o pid -p ${KT_PARENT_PID} --no-headers)
+  if [ -z "$KT_SHOULD_BE_GONE_ID" ]; then
+    return
+  else
+    kill -TERM ${KT_PARENT_PID}
+  fi
+
+  local KT_COUNT=0
+  while [ ${KT_COUNT} -lt 15 ]
+  do
+    local KT_SHOULD_BE_GONE_ID=$(ps -o pid -p ${KT_PARENT_PID} --no-headers)
+    if [ -z "$KT_SHOULD_BE_GONE_ID" ]; then
+      return
     else
-        kill -TERM ${_pid}
+      sleep 2
+      let KT_COUNT=${KT_COUNT}+1
     fi
+  done
 
-    local count=0
-    while [ ${count} -lt 15 ]
-    do
-        local should_be_gone_pid=$(ps -o pid -p ${_pid} --no-headers)
-        if [ -z "$should_be_gone_pid" ]; then
-                return
-        else
-                sleep 2
-                let count=${count}+1
-        fi
-    done
-
-    local should_be_gone_pid=$(ps -o pid -p ${_pid} --no-headers)
-    if [ ! -z $should_be_gone_pid ]
-    then
-        kill -9 ${_pid}
-    fi
+  local KT_SHOULD_BE_GONE_ID=$(ps -o pid -p ${KT_PARENT_PID} --no-headers)
+  if [ ! -z $KT_SHOULD_BE_GONE_ID ]; then
+    kill -9 ${KT_PARENT_PID}
+  fi
 }
 
 function catchall {
-    echo "$1 - Not yet implemented"
+  echo "$1 - Not yet implemented"
 }
 
 
@@ -195,7 +218,7 @@ case "$1" in
   tidy)        tidy ;;
   pre-build)   catchall "pre-build";;
   build)       build ;;
-  deploy)      catchall "deploy";;
+  deploy)      catchall "deploy" ;;
   post-deploy) catchall "post-deploy";;
   *)           exit 0
 esac
