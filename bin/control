@@ -3,7 +3,6 @@
 source $OPENSHIFT_CARTRIDGE_SDK_BASH
 . ~/.profile
 
-readonly JAVA_MEMORY="-Xms$JAVA_XMS -J-Xms$JAVA_XMS -Xmx$JAVA_XMX -J-Xmx$JAVA_XMX"
 readonly PLAY2_RUNTIME=${OPENSHIFT_DATA_DIR}
 readonly PLAY2_PID_RUN=${PLAY2_RUNTIME}/play2.pid
 readonly PLAY2_PID_ACTIVATOR_BUILD=${PLAY2_RUNTIME}/play2_activator_build.pid
@@ -27,7 +26,7 @@ function inc_num_build {
     INB_NUM_BUILD=$((INB_NUM_BUILD+1))
     echo $INB_NUM_BUILD > $PLAY2_NUM_BUILD
   else
-    echo 0 > $PLAY2_NUM_BUILD
+    echo 1 > $PLAY2_NUM_BUILD
   fi
 }
 
@@ -49,9 +48,9 @@ function start {
   elif [ -d "$PLAY2_APPLICATION_PATH" ]; then
     get_num_build
     local S_NUM_BUILD=$?
+    build
     if [ $S_NUM_BUILD -eq 1 ]; then
       # build on first time
-      build
       echo "Application first start, waiting build process"
     else
       cd $PLAY2_APPLICATION_PATH
@@ -66,17 +65,13 @@ function start_dist {
   if [ -f "$D_DIST_FILE" ]; then
     local D_BASENAME_FILE=$(basename "$D_DIST_FILE")
     local D_DIST_UNZIPPED="$PLAY2_DEPLOY_PATH/${D_BASENAME_FILE%.*}"
-    rm -fR $D_UNZIP_PATH
+    rm -fR $D_DIST_UNZIPPED
     unzip "$D_DIST_FILE" -d "$PLAY2_DEPLOY_PATH"
     local D_BIN_NAME=$(find $D_DIST_UNZIPPED/bin -type f | grep -v '.bat' | head -n 1)
     local D_PLAY_CRYPTO_SECRET=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9_?' | head -c30)
     local D_APPLICATION_CONF=$(find $D_DIST_UNZIPPED -type f -name application.conf | head -n 1)
     local D_RESOURCE_CONF=$(find $D_DIST_UNZIPPED -type f -name openshift.conf | head -n 1)
-    nohup $D_BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 \
-    -Dhttp.address=${OPENSHIFT_PLAY2_IP} -Dconfig.file=${D_APPLICATION_CONF} \
-    -Dconfig.resource=${D_RESOURCE_CONF} -Dplay.crypto.secret="$D_PLAY_CRYPTO_SECRET" \
-    $JAVA_MEMORY -Dpidfile.path=${PLAY2_PID_RUN} \
-    -DapplyEvolutions.default=true > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
+    nohup $D_BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -Dconfig.file=${D_APPLICATION_CONF} -Dconfig.resource=${D_RESOURCE_CONF} -Dplay.crypto.secret="$D_PLAY_CRYPTO_SECRET" -Dpidfile.path=${PLAY2_PID_RUN} -DapplyEvolutions.default=true >> $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
   else
     echo "ERROR: Deploy - Dist file [$D_DIST_FILE] not found"
   fi
@@ -121,15 +116,14 @@ function build {
     echo "First build takes a while."
     echo "At the end of build it will run start process"
     echo "$WAIT_MESSAGE"
-    nohup activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} \
-    $JAVA_MEMORY && inc_num_build && start &
+    nohup activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} && inc_num_build && start &
 
     local B_BUILD_PID=$!
     echo "$B_BUILD_PID" > $PLAY2_PID_ACTIVATOR_BUILD
   else
     echo "Play activator build process"
     # Clear PID process
-    activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} $JAVA_MEMORY &
+    activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} &
     local B_BUILD_PID=$!
     echo "$B_BUILD_PID" > $PLAY2_PID_ACTIVATOR_BUILD
     inc_num_build
