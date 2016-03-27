@@ -116,12 +116,12 @@ function build {
     echo "First build takes a while."
     echo "At the end of build it will run start process"
     echo "$WAIT_MESSAGE"
-    nohup activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} && inc_num_build && start &
+    nohup activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} && inc_num_build && nohup start &
 
     local B_BUILD_PID=$!
     echo "$B_BUILD_PID" > $PLAY2_PID_ACTIVATOR_BUILD
   else
-    echo "Play activator build process"
+    echo "Starting Play activator build process"
     # Clear PID process
     activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} &
     local B_BUILD_PID=$!
