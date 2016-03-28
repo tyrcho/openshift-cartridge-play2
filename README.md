@@ -60,7 +60,7 @@ In order to deploy an application from distribution file (zip dist file) follow 
 
 Your new application is now published :smiley:
 
-_**ATTENTION:**_ Publish a dist file is very smart solution but this solution could be fill your openshift gear disk because git maintains an history of all binary versions.
+_**ATTENTION:**_ Publish a dist file is very smart solution but this solution could be fill your openshift gear disk because git repository maintains an history of all dist file versions.
 
 ## Deploy application from source code
 In order to deploy an application from source follow these steps:

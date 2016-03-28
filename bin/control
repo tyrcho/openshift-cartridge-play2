@@ -116,7 +116,7 @@ function build {
       echo "At the end of build it will run start process"
       echo "$WAIT_MESSAGE"
       inc_num_build
-      nohup activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} && gear start &
+      nohup activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} && nohup gear start &
     else
       echo "Starting Play activator build process"
       activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} &
@@ -206,8 +206,6 @@ kill_tree() {
 function catchall {
   echo "$1 - Not yet implemented"
 }
-
-echo "$(date) --> $1" >> /tmp/control.log
 
 case "$1" in
   start)       start ;;
