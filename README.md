@@ -84,17 +84,17 @@ _**Note:**_ it takes a while build & publishing a new version.
 
 ## Tutorial
 Have a look at http://misto.ch/play-on-openshift/
-at the moment you need to use ```http://cartreflect-claytondev.rhcloud.com/reflect?github=fpirola/openshift-cartridge-play2&commit=play-2.5.0```.
+at the moment you need to use ```http://cartreflect-claytondev.rhcloud.com/reflect?github=tyrcho/openshift-cartridge-play2&commit=play-2.5.0```.
 
 ## From the web site
-In OpenShift, choose a downloaded cartridge, with the following URL : http://cartreflect-claytondev.rhcloud.com/reflect?github=fpirola/openshift-cartridge-play2&commit=play-2.5.0
+In OpenShift, choose a downloaded cartridge, with the following URL : http://cartreflect-claytondev.rhcloud.com/reflect?github=tyrcho/openshift-cartridge-play2&commit=play-2.5.0
 
 Note that it takes about 5 minutes to build the application since it will download the activator from lightbend and the initial build of the sample application takes ~10 minutes, depending on the load of the server.
 
 ## Command line (rhc)
 
 ```
-rhc app create  myappForPlay  http://cartreflect-claytondev.rhcloud.com/reflect?github=fpirola/openshift-cartridge-play2&commit=play-2.5.0
+rhc app create  myappForPlay  http://cartreflect-claytondev.rhcloud.com/reflect?github=tyrcho/openshift-cartridge-play2&commit=play-2.5.0
 ù```
 
 You might need to increase the timeout to let it the time to download the activator and build the application the first time.

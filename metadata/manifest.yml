@@ -3,13 +3,13 @@ Cartridge-Short-Name: Play2
 Display-Name: Play Framework 2.5.0
 Description: "The High Velocity Web Framework For Java and Scala"
 Version: '2.5.0'
-Source-Url: https://github.com/fpirola/openshift-cartridge-play2.git
+Source-Url: https://github.com/tyrcho/openshift-cartridge-play2.git
 License: "MIT"
 License-Url: http://www.gnu.org/copyleft/lesser.txt
 Vendor: none
 Cartridge-Version: '2.5.0'
 Cartridge-Vendor: github
-Website: https://github.com/fpirola/openshift-cartridge-play2
+Website: https://github.com/tyrcho/openshift-cartridge-play2
 Help-Topics:
   "Developer Center": https://www.openshift.com/developers
 Categories:
