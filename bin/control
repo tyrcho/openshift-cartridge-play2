@@ -209,6 +209,7 @@ function catchall {
   echo "$1 - Not yet implemented"
 }
 
+echo "$(date) --> $1" >> /tmp/control.log
 
 case "$1" in
   start)       start ;;
