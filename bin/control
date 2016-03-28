@@ -5,11 +5,17 @@ source $OPENSHIFT_CARTRIDGE_SDK_BASH
 
 readonly PLAY2_RUNTIME=${OPENSHIFT_DATA_DIR}
 readonly PLAY2_PID_RUN=${PLAY2_RUNTIME}/play2.pid
-readonly PLAY2_PID_ACTIVATOR_BUILD=${PLAY2_RUNTIME}/play2_activator_build.pid
-readonly PLAY2_NUM_BUILD=${PLAY2_RUNTIME}/play2_num_build.counter
+readonly PLAY2_PID_ACTIVATOR_BUILD=${PLAY2_RUNTIME}/play2-activator-build.pid
+readonly PLAY2_NUM_BUILD=${PLAY2_RUNTIME}/play2-num-build.counter
+readonly PLAY2_DIST_FILE=${PLAY2_RUNTIME}/play2-dist-file.file
 readonly PLAY2_DEPLOY_PATH=$OPENSHIFT_DATA_DIR/deploy
+# Begin Play2 status
+readonly PLAY2_STATUS_BUILDING=1
+readonly PLAY2_STATUS_RUNNING=2
+readonly PLAY2_STATUS_STOPPED=3
+# End Play2 status
 readonly CARTRIDGE_TYPE="play2"
-readonly WAIT_MESSAGE="So... keep calm and wait... it could be taken ~10 minutes for first build... take a break: watch some videos, listen some music tracks, ..."
+readonly WAIT_MESSAGE="So... keep calm and wait... it could be taken ~15 minutes for first build... take a break: watch some videos, listen some music tracks, ..."
 
 function get_num_build {
   if [ -f "$PLAY2_NUM_BUILD" ]; then
@@ -31,55 +37,36 @@ function inc_num_build {
 }
 
 function start {
+  status
+  local S_STATUS=$?
   # Check for running app
-  if is_running $PLAY2_PID_RUN ; then
-      echo "Application is already running"
-  elif is_running $PLAY2_PID_ACTIVATOR_BUILD ; then
-      echo "Application is building"
-  elif [ -f "$PLAY2_APPLICATION_PATH" ]; then
-    S_BASENAME_FILE=$(basename "$PLAY2_APPLICATION_PATH")
-    S_EXTENSION="${S_BASENAME_FILE##*.}"
-    if [ $S_EXTENSION != "zip" ]; then
-      start_dist "$PLAY2_APPLICATION_PATH"
+  if [ $S_STATUS -ne $PLAY2_STATUS_STOPPED ] ; then
+      echo "Application is not in status stopped, start skipped"
+  elif [ -f "$PLAY2_DIST_FILE" ]; then
+    local D_DIST_FILE=$(head -n 1 $PLAY2_DIST_FILE)
+    if [ -f "$D_DIST_FILE" ]; then
+      local D_BASENAME_FILE=$(basename "$D_DIST_FILE")
+      local D_DIST_UNZIPPED="$PLAY2_DEPLOY_PATH/${D_BASENAME_FILE%.*}"
+      rm -fR $D_DIST_UNZIPPED
+      unzip "$D_DIST_FILE" -d "$PLAY2_DEPLOY_PATH"
+      local D_BIN_NAME=$(find $D_DIST_UNZIPPED/bin -type f | grep -v '.bat' | head -n 1)
+      local D_PLAY_CRYPTO_SECRET=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9_?' | head -c30)
+      local D_APPLICATION_CONF=$(find $D_DIST_UNZIPPED -type f -name application.conf | head -n 1)
+      local D_RESOURCE_CONF=$(find $D_DIST_UNZIPPED -type f -name openshift.conf | head -n 1)
+      nohup $D_BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -Dconfig.file=${D_APPLICATION_CONF} -Dconfig.resource=${D_RESOURCE_CONF} -Dplay.crypto.secret="$D_PLAY_CRYPTO_SECRET" -Dpidfile.path=${PLAY2_PID_RUN} -DapplyEvolutions.default=true >> $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
     else
-      echo "Play2 application path is not a zip file, please check PLAY2_APPLICATION_PATH in ~/.profile file"
-      exit 2
+      echo "Distribution file [$D_DIST_FILE] not found, start skipped"
     fi
-  elif [ -d "$PLAY2_APPLICATION_PATH" ]; then
-    get_num_build
-    local S_NUM_BUILD=$?
-    build
-    if [ $S_NUM_BUILD -eq 1 ]; then
-      # build on first time
-      echo "Application first start, waiting build process"
-    else
-      cd $PLAY2_APPLICATION_PATH
-      local S_DIST_FILE=$(find `pwd`/target/universal -name *.zip)
-      start_dist "$S_DIST_FILE"
-    fi
-  fi
-}
-
-function start_dist {
-  local D_DIST_FILE=$1
-  if [ -f "$D_DIST_FILE" ]; then
-    local D_BASENAME_FILE=$(basename "$D_DIST_FILE")
-    local D_DIST_UNZIPPED="$PLAY2_DEPLOY_PATH/${D_BASENAME_FILE%.*}"
-    rm -fR $D_DIST_UNZIPPED
-    unzip "$D_DIST_FILE" -d "$PLAY2_DEPLOY_PATH"
-    local D_BIN_NAME=$(find $D_DIST_UNZIPPED/bin -type f | grep -v '.bat' | head -n 1)
-    local D_PLAY_CRYPTO_SECRET=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9_?' | head -c30)
-    local D_APPLICATION_CONF=$(find $D_DIST_UNZIPPED -type f -name application.conf | head -n 1)
-    local D_RESOURCE_CONF=$(find $D_DIST_UNZIPPED -type f -name openshift.conf | head -n 1)
-    nohup $D_BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -Dconfig.file=${D_APPLICATION_CONF} -Dconfig.resource=${D_RESOURCE_CONF} -Dplay.crypto.secret="$D_PLAY_CRYPTO_SECRET" -Dpidfile.path=${PLAY2_PID_RUN} -DapplyEvolutions.default=true >> $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
   else
-    echo "ERROR: Deploy - Dist file [$D_DIST_FILE] not found"
+    echo "Distribution file not found, start skipped"
   fi
 }
 
 
 function stop {
-  if is_running $PLAY2_PID_RUN ; then
+  status
+  local S_STATUS=$?
+  if [ $S_STATUS -ne $PLAY2_STATUS_STOPPED ] ; then
     if [ -f "$PLAY2_PID_RUN" ]; then
       local S_PLAY2_PID=$(cat $PLAY2_PID_RUN);
       echo "Sending SIGTERM to $CARTRIDGE_TYPE:$S_PLAY2_PID ..." 1>&2
@@ -105,32 +92,42 @@ function build {
   # git post receive-hook
   unset GIT_DIR
   unset GIT_WORK_TREE
-  if [ -f "$PLAY2_APPLICATION_PATH" ]; then
-    echo "Application path is a file, build process skipped"
+  status
+  local S_STATUS=$?
+  if [ $S_STATUS -eq $PLAY2_STATUS_BUILDING ] ; then
+    echo "Another build process is running, build skipped"
+  elif [ -f "$PLAY2_APPLICATION_PATH" ]; then
+    > $PLAY2_DIST_FILE
+    S_BASENAME_FILE=$(basename "$PLAY2_APPLICATION_PATH")
+    S_EXTENSION="${S_BASENAME_FILE##*.}"
+    if [ $S_EXTENSION != "zip" ]; then
+      echo "$PLAY2_APPLICATION_PATH" > $PLAY2_DIST_FILE
+    else
+      echo "Play2 application path is not a zip file, please check PLAY2_APPLICATION_PATH in ~/.profile file"
+      exit 2
+    fi
   elif [ -d "$PLAY2_APPLICATION_PATH" ]; then
     cd ${PLAY2_APPLICATION_PATH}
     get_num_build
     local B_NUM_BUILD=$?
-    if is_running $PLAY2_PID_ACTIVATOR_BUILD; then
-      echo "Another build process is running, please wait"
-    elif [ $B_NUM_BUILD -eq 0 ]; then
-      # First build
-      echo "First build takes a while."
-      echo "At the end of build it will run start process"
-      echo "$WAIT_MESSAGE"
-      inc_num_build
-      # Run gear start in nohup in order
-      # to create openshift server correctly.
-      # Note: gear start run build function.
-      nohup gear start &
-    else
-      echo "Starting Play activator build process"
-      # Clear PID process
-      activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} &
-      local B_BUILD_PID=$!
-      echo "$B_BUILD_PID" > $PLAY2_PID_ACTIVATOR_BUILD
-      inc_num_build
-      wait
+      build
+      if [ $B_NUM_BUILD -eq 0 ]; then
+        # First build
+        echo "First build takes a while."
+        echo "At the end of build it will run start process"
+        echo "$WAIT_MESSAGE"
+        inc_num_build
+        nohup activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} && gear start &
+      else
+        echo "Starting Play activator build process"
+        activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} &
+        local B_BUILD_PID=$!
+        echo "$B_BUILD_PID" > $PLAY2_PID_ACTIVATOR_BUILD
+        inc_num_build
+        wait
+        local B_DIST_FILE=$(find `pwd`/target/universal -name *.zip)
+        echo "$B_DIST_FILE" > $PLAY2_DIST_FILE
+      fi
     fi
   else
     echo "Play2 application path is not a zip file, please check PLAY2_APPLICATION_PATH in ~/.profile file"
@@ -160,17 +157,20 @@ function status() {
     get_num_build
     local S_NUM_BUILD=$?
     if [ $S_NUM_BUILD -eq 0 ]; then
-      client_result "Application is building. $WAIT_MESSAGE"
+      client_result "Application is under building. $WAIT_MESSAGE"
+      return $PLAY2_STATUS_BUILDING
     else
-      client_result "Application is building"
+      client_result "Application is under building"
+      return $PLAY2_STATUS_BUILDING
     fi
   elif is_running $PLAY2_PID_RUN; then
     client_result "Application is running"
+    return $PLAY2_STATUS_RUNNING
   else
     client_result "Application is either stopped or inaccessible"
+    return $PLAY2_STATUS_STOPPED
   fi
 }
-
 
 # Kill the process given by $1 and its children
 kill_tree() {
