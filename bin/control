@@ -9,7 +9,7 @@ readonly PLAY2_PID_ACTIVATOR_BUILD=${PLAY2_RUNTIME}/play2_activator_build.pid
 readonly PLAY2_NUM_BUILD=${PLAY2_RUNTIME}/play2_num_build.counter
 readonly PLAY2_DEPLOY_PATH=$OPENSHIFT_DATA_DIR/deploy
 readonly CARTRIDGE_TYPE="play2"
-readonly WAIT_MESSAGE="So... keep calm and wait... it could be taken ~15 minutes for first build... take a break: watch some videos, listen some music tracks, ..."
+readonly WAIT_MESSAGE="So... keep calm and wait... it could be taken ~10 minutes for first build... take a break: watch some videos, listen some music tracks, ..."
 
 function get_num_build {
   if [ -f "$PLAY2_NUM_BUILD" ]; then
@@ -105,29 +105,36 @@ function build {
   # git post receive-hook
   unset GIT_DIR
   unset GIT_WORK_TREE
-
-  cd ${PLAY2_APPLICATION_PATH}
-  get_num_build
-  local B_NUM_BUILD=$?
-  if is_running $PLAY2_PID_ACTIVATOR_BUILD; then
-    echo "Another build process is running, please wait"
-   elif [ $B_NUM_BUILD -eq 0 ]; then
-    # First build
-    echo "First build takes a while."
-    echo "At the end of build it will run start process"
-    echo "$WAIT_MESSAGE"
-    nohup activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} && inc_num_build && nohup start &
-
-    local B_BUILD_PID=$!
-    echo "$B_BUILD_PID" > $PLAY2_PID_ACTIVATOR_BUILD
+  if [ -f "$PLAY2_APPLICATION_PATH" ]; then
+    echo "Application path is a file, build process skipped"
+  elif [ -d "$PLAY2_APPLICATION_PATH" ]; then
+    cd ${PLAY2_APPLICATION_PATH}
+    get_num_build
+    local B_NUM_BUILD=$?
+    if is_running $PLAY2_PID_ACTIVATOR_BUILD; then
+      echo "Another build process is running, please wait"
+    elif [ $B_NUM_BUILD -eq 0 ]; then
+      # First build
+      echo "First build takes a while."
+      echo "At the end of build it will run start process"
+      echo "$WAIT_MESSAGE"
+      inc_num_build
+      # Run gear start in nohup in order
+      # to create openshift server correctly.
+      # Note: gear start run build function.
+      nohup gear start &
+    else
+      echo "Starting Play activator build process"
+      # Clear PID process
+      activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} &
+      local B_BUILD_PID=$!
+      echo "$B_BUILD_PID" > $PLAY2_PID_ACTIVATOR_BUILD
+      inc_num_build
+      wait
+    fi
   else
-    echo "Starting Play activator build process"
-    # Clear PID process
-    activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} &
-    local B_BUILD_PID=$!
-    echo "$B_BUILD_PID" > $PLAY2_PID_ACTIVATOR_BUILD
-    inc_num_build
-    wait
+    echo "Play2 application path is not a zip file, please check PLAY2_APPLICATION_PATH in ~/.profile file"
+    exit 2
   fi
 }
 
