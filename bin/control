@@ -101,12 +101,13 @@ function build {
     local B_BASENAME_FILE=$(basename "$PLAY2_APPLICATION_PATH")
     local B_EXTENSION="${B_BASENAME_FILE##*.}"
     if [ $B_EXTENSION != "zip" ]; then
-      echo "$PLAY2_APPLICATION_PATH" > $PLAY2_DIST_FILE
-    else
       echo "Play2 application path is not a zip file, please check PLAY2_APPLICATION_PATH in ~/.profile file"
       exit 2
+    else
+      echo "$PLAY2_APPLICATION_PATH" > $PLAY2_DIST_FILE
     fi
   elif [ -d "$PLAY2_APPLICATION_PATH" ]; then
+    > $PLAY2_DIST_FILE
     cd ${PLAY2_APPLICATION_PATH}
     get_num_build
     local B_NUM_BUILD=$?
