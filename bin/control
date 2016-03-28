@@ -43,19 +43,19 @@ function start {
   if [ $S_STATUS -ne $PLAY2_STATUS_STOPPED ] ; then
       echo "Application is not in status stopped, start skipped"
   elif [ -f "$PLAY2_DIST_FILE" ]; then
-    local D_DIST_FILE=$(head -n 1 $PLAY2_DIST_FILE)
-    if [ -f "$D_DIST_FILE" ]; then
-      local D_BASENAME_FILE=$(basename "$D_DIST_FILE")
-      local D_DIST_UNZIPPED="$PLAY2_DEPLOY_PATH/${D_BASENAME_FILE%.*}"
-      rm -fR $D_DIST_UNZIPPED
-      unzip "$D_DIST_FILE" -d "$PLAY2_DEPLOY_PATH"
-      local D_BIN_NAME=$(find $D_DIST_UNZIPPED/bin -type f | grep -v '.bat' | head -n 1)
-      local D_PLAY_CRYPTO_SECRET=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9_?' | head -c30)
-      local D_APPLICATION_CONF=$(find $D_DIST_UNZIPPED -type f -name application.conf | head -n 1)
-      local D_RESOURCE_CONF=$(find $D_DIST_UNZIPPED -type f -name openshift.conf | head -n 1)
-      nohup $D_BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -Dconfig.file=${D_APPLICATION_CONF} -Dconfig.resource=${D_RESOURCE_CONF} -Dplay.crypto.secret="$D_PLAY_CRYPTO_SECRET" -Dpidfile.path=${PLAY2_PID_RUN} -DapplyEvolutions.default=true >> $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
+    local S_DIST_FILE=$(head -n 1 $PLAY2_DIST_FILE)
+    if [ -f "$S_DIST_FILE" ]; then
+      local S_BASENAME_FILE=$(basename "$S_DIST_FILE")
+      local S_DIST_UNZIPPED="$PLAY2_DEPLOY_PATH/${S_BASENAME_FILE%.*}"
+      rm -fR $S_DIST_UNZIPPED
+      unzip "$S_DIST_FILE" -d "$PLAY2_DEPLOY_PATH"
+      local S_BIN_NAME=$(find $S_DIST_UNZIPPED/bin -type f | grep -v '.bat' | head -n 1)
+      local S_PLAY_CRYPTO_SECRET=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9_?' | head -c30)
+      local S_APPLICATION_CONF=$(find $S_DIST_UNZIPPED -type f -name application.conf | head -n 1)
+      local S_RESOURCE_CONF=$(find $S_DIST_UNZIPPED -type f -name openshift.conf | head -n 1)
+      nohup $S_BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -Dconfig.file=${S_APPLICATION_CONF} -Dconfig.resource=${S_RESOURCE_CONF} -Dplay.crypto.secret="$S_PLAY_CRYPTO_SECRET" -Dpidfile.path=${PLAY2_PID_RUN} -DapplyEvolutions.default=true >> $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
     else
-      echo "Distribution file [$D_DIST_FILE] not found, start skipped"
+      echo "Distribution file [$S_DIST_FILE] not found, start skipped"
     fi
   else
     echo "Distribution file not found, start skipped"
@@ -93,14 +93,14 @@ function build {
   unset GIT_DIR
   unset GIT_WORK_TREE
   status
-  local S_STATUS=$?
-  if [ $S_STATUS -eq $PLAY2_STATUS_BUILDING ] ; then
+  local B_STATUS=$?
+  if [ $B_STATUS -eq $PLAY2_STATUS_BUILDING ] ; then
     echo "Another build process is running, build skipped"
   elif [ -f "$PLAY2_APPLICATION_PATH" ]; then
     > $PLAY2_DIST_FILE
-    S_BASENAME_FILE=$(basename "$PLAY2_APPLICATION_PATH")
-    S_EXTENSION="${S_BASENAME_FILE##*.}"
-    if [ $S_EXTENSION != "zip" ]; then
+    local B_BASENAME_FILE=$(basename "$PLAY2_APPLICATION_PATH")
+    local B_EXTENSION="${B_BASENAME_FILE##*.}"
+    if [ $B_EXTENSION != "zip" ]; then
       echo "$PLAY2_APPLICATION_PATH" > $PLAY2_DIST_FILE
     else
       echo "Play2 application path is not a zip file, please check PLAY2_APPLICATION_PATH in ~/.profile file"
@@ -110,7 +110,6 @@ function build {
     cd ${PLAY2_APPLICATION_PATH}
     get_num_build
     local B_NUM_BUILD=$?
-    build
     if [ $B_NUM_BUILD -eq 0 ]; then
       # First build
       echo "First build takes a while."
