@@ -1,9 +1,34 @@
 #!/bin/bash
 
-activatorV="1.3.3"
+ACTIVATOR_VERSION="1.3.7"
 
 cd ${OPENSHIFT_DATA_DIR}
-curl http://downloads.typesafe.com/typesafe-activator/${activatorV}/typesafe-activator-${activatorV}.zip > activator.zip
-unzip activator.zip
-rm activator.zip
-ln -s ${OPENSHIFT_DATA_DIR}/activator-${activatorV} ${OPENSHIFT_DATA_DIR}/activator
+curl https://downloads.typesafe.com/typesafe-activator/${ACTIVATOR_VERSION}/typesafe-activator-${ACTIVATOR_VERSION}-minimal.zip > activator-minimal.zip
+unzip activator-minimal.zip
+rm activator-minimal.zip
+ln -s ${OPENSHIFT_DATA_DIR}activator-${ACTIVATOR_VERSION}-minimal ${OPENSHIFT_DATA_DIR}activator
+
+## Set-up environment variable
+PROFILE_FILE=${OPENSHIFT_DATA_DIR}/.profile
+echo "# Warning: Be careful with modifications to this file,"            > ${PROFILE_FILE}
+echo "#          Your changes may cause your application to fail."      >> ${PROFILE_FILE}
+echo "export PLAY2_APPLICATION_PATH=${OPENSHIFT_REPO_DIR}play-scala"    >> ${PROFILE_FILE}
+echo "export JAVA_OPTS=\"-Xms512m -Xmx512m\""                           >> ${PROFILE_FILE}
+echo "export SBT_OPTS=\"-Xms512m -Xmx512m\""                            >> ${PROFILE_FILE}
+chmod 755 ${PROFILE_FILE}
+ln -s ${PROFILE_FILE} ~/.profile
+
+BASHRC_FILE=${OPENSHIFT_DATA_DIR}/.bashrc
+echo "# Warning: Be careful with modifications to this file,"         > ${BASHRC_FILE}
+echo "#          Your changes may cause your application to fail."   >> ${BASHRC_FILE}
+echo "# FORCE load profile"                                          >> ${BASHRC_FILE}
+echo ". ~/.profile"                                                  >> ${BASHRC_FILE}
+chmod 755 ${BASHRC_FILE}
+ln -s ${BASHRC_FILE} ~/.bashrc
+
+BASH_PROFILE_FILE=${OPENSHIFT_DATA_DIR}/.bash_profile
+echo "# Warning: Be careful with modifications to this file,"         > ${BASH_PROFILE_FILE}
+echo "#          Your changes may cause your application to fail."   >> ${BASH_PROFILE_FILE}
+echo "if [ -f ~/.bashrc ]; then . ~/.bashrc; fi"                     >> ${BASH_PROFILE_FILE}
+chmod 755 ${BASH_PROFILE_FILE}
+ln -s ${BASH_PROFILE_FILE} ~/.bash_profile

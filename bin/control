@@ -1,42 +1,212 @@
-#!/bin/bash -e
+#!/bin/bash
 
-function start {
-    cd $OPENSHIFT_REPO_DIR
-    # build on first time
-    [ -d target ] || build
-    rm -f target/universal/stage/RUNNING_PID
-    BIN_NAME=$(ls target/universal/stage/bin/ | head -n 1)
-    nohup target/universal/stage/bin/$BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -DapplyEvolutions.default=true -Dconfig.resource=openshift.conf -mem 512 > $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
+source $OPENSHIFT_CARTRIDGE_SDK_BASH
+. ~/.profile
+
+readonly PLAY2_RUNTIME=${OPENSHIFT_DATA_DIR}
+readonly PLAY2_PID_RUN=${PLAY2_RUNTIME}/play2.pid
+readonly PLAY2_PID_ACTIVATOR_BUILD=${PLAY2_RUNTIME}/play2-activator-build.pid
+readonly PLAY2_NUM_BUILD=${PLAY2_RUNTIME}/play2-num-build.counter
+readonly PLAY2_DIST_FILE=${PLAY2_RUNTIME}/play2-dist-file.file
+readonly PLAY2_DEPLOY_PATH=$OPENSHIFT_DATA_DIR/deploy
+# Begin Play2 status
+readonly PLAY2_STATUS_BUILDING=1
+readonly PLAY2_STATUS_RUNNING=2
+readonly PLAY2_STATUS_STOPPED=3
+# End Play2 status
+readonly CARTRIDGE_TYPE="play2"
+readonly WAIT_MESSAGE="So... keep calm and wait... it could be taken ~15 minutes for first build... take a break: watch some videos, listen some music tracks, ..."
+
+function get_num_build {
+  if [ -f "$PLAY2_NUM_BUILD" ]; then
+    return $(cat $PLAY2_NUM_BUILD)
+  else
+    echo 0 > $PLAY2_NUM_BUILD
+    return 0
+  fi
 }
 
+function inc_num_build {
+  if [ -f "$PLAY2_NUM_BUILD" ]; then
+    local INB_NUM_BUILD=$(cat $PLAY2_NUM_BUILD)
+    INB_NUM_BUILD=$((INB_NUM_BUILD+1))
+    echo $INB_NUM_BUILD > $PLAY2_NUM_BUILD
+  else
+    echo 1 > $PLAY2_NUM_BUILD
+  fi
+}
+
+function start {
+  status
+  local S_STATUS=$?
+  # Check for running app
+  if [ $S_STATUS -ne $PLAY2_STATUS_STOPPED ] ; then
+      echo "Application is not in status stopped, start skipped"
+  elif [ -f "$PLAY2_DIST_FILE" ]; then
+    local S_DIST_FILE=$(head -n 1 $PLAY2_DIST_FILE)
+    if [ -f "$S_DIST_FILE" ]; then
+      local S_BASENAME_FILE=$(basename "$S_DIST_FILE")
+      local S_DIST_UNZIPPED="$PLAY2_DEPLOY_PATH/${S_BASENAME_FILE%.*}"
+      rm -fR $S_DIST_UNZIPPED
+      unzip "$S_DIST_FILE" -d "$PLAY2_DEPLOY_PATH"
+      local S_BIN_NAME=$(find $S_DIST_UNZIPPED/bin -type f | grep -v '.bat' | head -n 1)
+      local S_PLAY_CRYPTO_SECRET=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9_?' | head -c30)
+      local S_APPLICATION_CONF=$(find $S_DIST_UNZIPPED -type f -name application.conf | head -n 1)
+      local S_RESOURCE_CONF=$(find $S_DIST_UNZIPPED -type f -name openshift.conf | head -n 1)
+      nohup $S_BIN_NAME -Duser.home=${OPENSHIFT_DATA_DIR} -Dhttp.port=8080 -Dhttp.address=${OPENSHIFT_PLAY2_IP} -Dconfig.file=${S_APPLICATION_CONF} -Dconfig.resource=${S_RESOURCE_CONF} -Dplay.crypto.secret="$S_PLAY_CRYPTO_SECRET" -Dpidfile.path=${PLAY2_PID_RUN} -DapplyEvolutions.default=true >> $OPENSHIFT_PLAY2_LOG_DIR/play.log 2>&1 &
+    else
+      echo "Distribution file [$S_DIST_FILE] not found, start skipped"
+    fi
+  else
+    echo "Distribution file not found, start skipped"
+  fi
+}
+
+
 function stop {
-    killall java || true
+  status
+  local S_STATUS=$?
+  if [ $S_STATUS -ne $PLAY2_STATUS_STOPPED ] ; then
+    if [ -f "$PLAY2_PID_RUN" ]; then
+      local S_PLAY2_PID=$(cat $PLAY2_PID_RUN);
+      echo "Sending SIGTERM to $CARTRIDGE_TYPE:$S_PLAY2_PID ..." 1>&2
+      kill_tree $S_PLAY2_PID
+    else
+      echo "Failed to locate $CARTRIDGE_TYPE PID File" 1>&2
+    fi
+  else
+    echo "$CARTRIDGE_TYPE cart is already stopped"
+  fi
 }
 
 function restart {
+    echo "Restarting $CARTRIDGE_TYPE cart"
     stop
     start
 }
 
 function build {
-    # Workaround for failure in npm install when a package in package.json
-    # points to a git commit.
-    # This issue occurs because we are running in the context of a
-    # git post receive-hook
-    unset GIT_DIR
-    unset GIT_WORK_TREE
-
-    cd ${OPENSHIFT_REPO_DIR}
-    activator clean stage -Duser.home=${OPENSHIFT_DATA_DIR} -mem 512
+  # Workaround for failure in npm install when a package in package.json
+  # points to a git commit.
+  # This issue occurs because we are running in the context of a
+  # git post receive-hook
+  unset GIT_DIR
+  unset GIT_WORK_TREE
+  status
+  local B_STATUS=$?
+  if [ $B_STATUS -eq $PLAY2_STATUS_BUILDING ] ; then
+    echo "Another build process is running, build skipped"
+  elif [ -f "$PLAY2_APPLICATION_PATH" ]; then
+    > $PLAY2_DIST_FILE
+    local B_BASENAME_FILE=$(basename "$PLAY2_APPLICATION_PATH")
+    local B_EXTENSION="${B_BASENAME_FILE##*.}"
+    if [ $B_EXTENSION != "zip" ]; then
+      echo "Play2 application path is not a zip file, please check PLAY2_APPLICATION_PATH in ~/.profile file"
+      exit 2
+    else
+      echo "$PLAY2_APPLICATION_PATH" > $PLAY2_DIST_FILE
+    fi
+  elif [ -d "$PLAY2_APPLICATION_PATH" ]; then
+    > $PLAY2_DIST_FILE
+    cd ${PLAY2_APPLICATION_PATH}
+    get_num_build
+    local B_NUM_BUILD=$?
+    if [ $B_NUM_BUILD -eq 0 ]; then
+      # First build
+      echo "First build takes a while."
+      echo "At the end of build it will run start process"
+      echo "$WAIT_MESSAGE"
+      inc_num_build
+      # Call build in nohup because first run take a while.
+      nohup gear build && nohup gear start &
+    else
+      echo "Starting Play activator build process"
+      activator clean dist -Duser.home=${OPENSHIFT_DATA_DIR} &
+      local B_BUILD_PID=$!
+      echo "$B_BUILD_PID" > $PLAY2_PID_ACTIVATOR_BUILD
+      inc_num_build
+      wait
+      local B_DIST_FILE=$(find `pwd`/target/universal -name *.zip)
+      echo "$B_DIST_FILE" > $PLAY2_DIST_FILE
+    fi
+  else
+    echo "Play2 application path is not a zip file, please check PLAY2_APPLICATION_PATH in ~/.profile file"
+    exit 2
+  fi
 }
 
 function tidy {
-    shopt -s dotglob
-    rm -rf $OPENSHIFT_TMP_DIR/*
+  shopt -s dotglob
+  rm -rf $OPENSHIFT_TMP_DIR/*
+}
+
+# Check if the play2 process is running
+function is_running() {
+  # Check for running app
+  if [ -f "$1" ]; then
+    local IR_PID_TO_CHECK=$(cat $1)
+    if /bin/ps --pid $IR_PID_TO_CHECK 1>&2 >/dev/null; then
+      return 0
+    fi
+  fi
+  return 1
+}
+
+function status() {
+  if is_running $PLAY2_PID_ACTIVATOR_BUILD; then
+    get_num_build
+    local S_NUM_BUILD=$?
+    if [ $S_NUM_BUILD -eq 0 ]; then
+      client_result "Application is under building. $WAIT_MESSAGE"
+      return $PLAY2_STATUS_BUILDING
+    else
+      client_result "Application is under building"
+      return $PLAY2_STATUS_BUILDING
+    fi
+  elif is_running $PLAY2_PID_RUN; then
+    client_result "Application is running"
+    return $PLAY2_STATUS_RUNNING
+  else
+    client_result "Application is either stopped or inaccessible"
+    return $PLAY2_STATUS_STOPPED
+  fi
+}
+
+# Kill the process given by $1 and its children
+kill_tree() {
+  local KT_PARENT_PID=$1
+  for KT_PID_CHILD in $(ps -o pid --no-headers --ppid ${KT_PARENT_PID});
+  do
+    kill_tree ${KT_PID_CHILD}
+  done
+
+  local KT_SHOULD_BE_GONE_ID=$(ps -o pid -p ${KT_PARENT_PID} --no-headers)
+  if [ -z "$KT_SHOULD_BE_GONE_ID" ]; then
+    return
+  else
+    kill -TERM ${KT_PARENT_PID}
+  fi
+
+  local KT_COUNT=0
+  while [ ${KT_COUNT} -lt 15 ]
+  do
+    local KT_SHOULD_BE_GONE_ID=$(ps -o pid -p ${KT_PARENT_PID} --no-headers)
+    if [ -z "$KT_SHOULD_BE_GONE_ID" ]; then
+      return
+    else
+      sleep 2
+      let KT_COUNT=${KT_COUNT}+1
+    fi
+  done
+
+  local KT_SHOULD_BE_GONE_ID=$(ps -o pid -p ${KT_PARENT_PID} --no-headers)
+  if [ ! -z $KT_SHOULD_BE_GONE_ID ]; then
+    kill -9 ${KT_PARENT_PID}
+  fi
 }
 
 function catchall {
-    echo ""
+  echo "$1 - Not yet implemented"
 }
 
 case "$1" in
@@ -44,12 +214,12 @@ case "$1" in
   stop)        stop ;;
   restart)     restart ;;
   status)      status ;;
-  reload)      catchall ;;
+  reload)      catchall "reload";;
   tidy)        tidy ;;
-  pre-build)   catchall ;;
+  pre-build)   catchall "pre-build";;
   build)       build ;;
-  deploy)      catchall ;;
-  post-deploy) catchall ;;
+  deploy)      catchall "deploy" ;;
+  post-deploy) catchall "post-deploy";;
   *)           exit 0
 esac
 
