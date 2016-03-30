@@ -38,6 +38,7 @@ In this file it is defined the following variables:
 In order to deploy an application from distribution file (zip dist file) follow these steps:
   1. Create openshift gear from cartridge play2
   2. Clone openshift gear repository locally:
+
   ```
   git clone ssh://Here-repository-url
   ```
@@ -46,11 +47,13 @@ In order to deploy an application from distribution file (zip dist file) follow 
   5. Update PLAY2_APPLICATION_PATH variable in ~/.profile:
 
   _Note:_ replace "my-application-1.0-SNAPSHOT.zip" with your dist zip file.
+  
   ```
   export PLAY2_APPLICATION_PATH=/var/lib/openshift/56f861dd7628e1713600003c/app-root/runtime/repo/play-scala/my-application-1.0-SNAPSHOT.zip
   ```
   6. Copy local zip file in "play-scala" inside openshift git repository
   7. Publish your dist to openshift gear:
+  
   ```
   $ cd play-scala
   $ git add .
@@ -66,12 +69,14 @@ _**ATTENTION:**_ Publish a dist file is very smart solution but this solution co
 In order to deploy an application from source follow these steps:
   1. Create openshift gear from cartridge play2
   2. Clone openshift gear repository locally:
+
   ```
   git clone ssh://Here-repository-url
   ```
   3. Open/import project with your favourite development IDE, source code is in "play-scala" directory
   4. Test & develop locally
   5. After development use git to publish your new version to openshift gear:
+
   ```
   $ cd play-scala
   $ git add .
@@ -80,7 +85,10 @@ In order to deploy an application from source follow these steps:
   ```
 
 Your new application is now published :smiley:
+
 _**Note:**_ it takes a while build & publishing a new version.
+
+_**Note^2:**_ the first build process it takes a while, up to ~15 minutes because activator program download all dependencies.
 
 ## Tutorial
 Have a look at http://misto.ch/play-on-openshift/
@@ -95,7 +103,7 @@ Note that it takes about 5 minutes to build the application since it will downlo
 
 ```
 rhc app create  myappForPlay  http://cartreflect-claytondev.rhcloud.com/reflect?github=tyrcho/openshift-cartridge-play2&commit=play-2.5.0
-ù```
+```
 
 You might need to increase the timeout to let it the time to download the activator and build the application the first time.
 
