@@ -32,3 +32,8 @@ echo "#          Your changes may cause your application to fail."   >> ${BASH_P
 echo "if [ -f ~/.bashrc ]; then . ~/.bashrc; fi"                     >> ${BASH_PROFILE_FILE}
 chmod 755 ${BASH_PROFILE_FILE}
 ln -s ${BASH_PROFILE_FILE} ~/.bash_profile
+
+SBT_PLUGINS_PATH=~/.sbt/0.13/plugins/
+SBT_PLUGINS_BUILD_FILE=${SBT_PLUGINS_PATH}build.sbt
+mkdir --parent ${SBT_PLUGINS_PATH}
+echo "addSbtPlugin(\"com.github.alexarchambault\" % \"coursier-sbt-plugin\" % \"1.0.0-M10\")" > ${SBT_PLUGINS_BUILD_FILE}
