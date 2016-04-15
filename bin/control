@@ -154,21 +154,25 @@ function is_running() {
 
 function status() {
   if is_running $PLAY2_PID_ACTIVATOR_BUILD; then
-    get_num_build
-    local S_NUM_BUILD=$?
-    if [ $S_NUM_BUILD -eq 0 ]; then
-      client_result "Application is under building. $WAIT_MESSAGE"
-      return $PLAY2_STATUS_BUILDING
-    else
-      client_result "Application is under building"
-      return $PLAY2_STATUS_BUILDING
-    fi
+    return $PLAY2_STATUS_BUILDING
   elif is_running $PLAY2_PID_RUN; then
-    client_result "Application is running"
     return $PLAY2_STATUS_RUNNING
   else
-    client_result "Application is either stopped or inaccessible"
     return $PLAY2_STATUS_STOPPED
+  fi
+}
+
+function echo_status() {
+  status
+  local E_STATUS=$?
+  if [ $E_STATUS -eq $PLAY2_STATUS_BUILDING ]; then
+    client_result "Application is under building"
+  elif [ $E_STATUS -eq $PLAY2_STATUS_RUNNING ]; then
+    client_result "Application is running"
+  elif [ $E_STATUS -eq $PLAY2_STATUS_STOPPED ]; then
+    client_result "Application is either stopped or inaccessible"
+  else
+    client_result "Unknown status"
   fi
 }
 
@@ -213,7 +217,7 @@ case "$1" in
   start)       start ;;
   stop)        stop ;;
   restart)     restart ;;
-  status)      status ;;
+  status)      echo_status ;;
   reload)      catchall "reload";;
   tidy)        tidy ;;
   pre-build)   catchall "pre-build";;
