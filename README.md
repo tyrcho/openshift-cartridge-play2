@@ -47,15 +47,14 @@ In order to deploy an application from distribution file (zip dist file) follow 
   5. Update PLAY2_APPLICATION_PATH variable in ~/.profile:
 
   _Note:_ replace "my-application-1.0-SNAPSHOT.zip" with your dist zip file.
-  
+
   ```
-  export PLAY2_APPLICATION_PATH=/var/lib/openshift/56f861dd7628e1713600003c/app-root/runtime/repo/play-scala/my-application-1.0-SNAPSHOT.zip
+  export PLAY2_APPLICATION_PATH=/var/lib/openshift/56f861dd7628e1713600003c/app-root/runtime/repo/my-application-1.0-SNAPSHOT.zip
   ```
-  6. Copy local zip file in "play-scala" inside openshift git repository
+  6. Copy local zip file inside openshift git repository
   7. Publish your dist to openshift gear:
-  
+
   ```
-  $ cd play-scala
   $ git add .
   $ git commit -m "Here insert a useful comment"
   $ git push origin master
@@ -73,12 +72,11 @@ In order to deploy an application from source follow these steps:
   ```
   git clone ssh://Here-repository-url
   ```
-  3. Open/import project with your favourite development IDE, source code is in "play-scala" directory
+  3. Open/import project with your favourite development IDE
   4. Test & develop locally
   5. After development use git to publish your new version to openshift gear:
 
   ```
-  $ cd play-scala
   $ git add .
   $ git commit -m "Here insert a useful comment"
   $ git push origin master
@@ -95,9 +93,21 @@ Have a look at http://misto.ch/play-on-openshift/
 at the moment you need to use ```http://cartreflect-claytondev.rhcloud.com/reflect?github=tyrcho/openshift-cartridge-play2&commit=play-2.5.0```.
 
 ## From the web site
-In OpenShift, choose a downloaded cartridge, with the following URL : http://cartreflect-claytondev.rhcloud.com/reflect?github=tyrcho/openshift-cartridge-play2&commit=play-2.5.0
 
-Note that it takes about 5 minutes to build the application since it will download the activator from lightbend and the initial build of the sample application takes ~10 minutes, depending on the load of the server.
+1. Go to https://openshift.redhat.com/app/console/applications
+2. Click on "Add Application…"
+3. Go to the bottom page and in Code Anything "URL to a cartridge definition" insert:
+`http://cartreflect-claytondev.rhcloud.com/reflect?github=tyrcho/openshift-cartridge-play2&commit=play-2.5.0`
+4. Click on "Next"
+5. Define an url for the Application Name
+6. In "Source Code" field insert "https://github.com/tyrcho/openshift-cartridge-play2.git"
+7. Go to the bottom page and click the button "Create Application"
+8. Wait ~15 minutes for the first build. It takes a while because it downloads activator and its dependecies
+9. Connect via ssh
+10. Wait until the application is stopped (via 'gear status')
+11. Execute 'gear build'
+12. Execute 'gear start'
+
 
 ## Command line (rhc)
 
