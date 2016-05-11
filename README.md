@@ -122,3 +122,5 @@ You might need to increase the timeout to let it the time to download the activa
 You need to have installed [Play](http://www.playframework.com/) on your development workstation.
 
 Simply launch ```activator run``` from your invite, and browse to http://localhost:9000/ to see the welcome page.
+
+[![Throughput Graph](https://graphs.waffle.io/tyrcho/openshift-cartridge-play2/throughput.svg)](https://waffle.io/tyrcho/openshift-cartridge-play2/metrics/throughput)
