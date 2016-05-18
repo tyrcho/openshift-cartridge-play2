@@ -100,13 +100,12 @@ at the moment you need to use ```http://cartreflect-claytondev.rhcloud.com/refle
 `http://cartreflect-claytondev.rhcloud.com/reflect?github=tyrcho/openshift-cartridge-play2&commit=play-2.5.0`
 4. Click on "Next"
 5. Define an url for the Application Name
-6. In "Source Code" field insert "https://github.com/tyrcho/openshift-cartridge-play2.git"
-7. Go to the bottom page and click the button "Create Application"
-8. Wait ~15 minutes for the first build. It takes a while because it downloads activator and its dependecies
-9. Connect via ssh
-10. Wait until the application is stopped (via 'gear status')
-11. Execute 'gear build'
-12. Execute 'gear start'
+6. Go to the bottom page and click the button "Create Application"
+7. Wait ~15 minutes for the first build. It takes a while because it downloads activator and its dependecies
+8. Connect via ssh
+9. Wait until the application is stopped (via 'gear status')
+10. Execute 'gear build'
+11. Execute 'gear start'
 
 
 ## Command line (rhc)
